@@ -16,7 +16,7 @@
         <h2 class="text-xl font-bold mb-2">Đã gửi lên AI xử lý!</h2>
         <p class="text-sm mb-5" style="color:var(--sp-text-secondary)">{{ $message }}</p>
         <div class="flex gap-3 justify-center">
-            <a href="{{ route('teacher.pending') }}" class="sp-btn sp-btn-primary">
+            <a href="{{ route('teacher.pending') }}" wire:navigate class="sp-btn sp-btn-primary">
                 👁️ Xem câu hỏi chờ duyệt
             </a>
             <button wire:click="$set('dispatched', false)" class="sp-btn sp-btn-outline">

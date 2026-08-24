@@ -167,9 +167,10 @@
 
     {{-- ── Actions ── --}}
     <div class="flex gap-3 justify-center pb-4">
-        <a href="{{ route('dashboard') }}" class="sp-btn sp-btn-outline">← Về Dashboard</a>
-        <a href="{{ route('student.thi') }}" class="sp-btn sp-btn-primary">🔄 Thi lại</a>
-        <a href="{{ route('student.on-tap') }}" class="sp-btn"
+        <a href="{{ route('dashboard') }}" wire:navigate class="sp-btn sp-btn-outline">🏠 Dashboard</a>
+        <a href="{{ route('student.thi') }}" wire:navigate.hover class="sp-btn sp-btn-primary">🔁 Thi lại</a>
+        <a href="{{ route('student.on-tap') }}" wire:navigate
+           class="sp-btn"
            style="background:#fef3c7;color:#92400e">⚡ Ôn điểm yếu</a>
     </div>
 

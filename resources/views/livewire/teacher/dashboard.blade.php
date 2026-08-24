@@ -20,12 +20,12 @@
 
     {{-- Quick actions --}}
     <div class="flex gap-3 flex-wrap">
-        <a href="{{ route('teacher.questions') }}?action=create"
+        <a href="{{ route('teacher.questions') }}?action=create" wire:navigate.hover
            class="sp-btn sp-btn-primary">➕ Thêm câu hỏi</a>
-        <a href="{{ route('teacher.ocr') }}"
+        <a href="{{ route('teacher.ocr') }}" wire:navigate
            class="sp-btn sp-btn-accent">📄 Upload PDF/Ảnh (OCR)</a>
         @if($choDuyet > 0)
-        <a href="{{ route('teacher.pending') }}"
+        <a href="{{ route('teacher.pending') }}" wire:navigate
            class="sp-btn" style="background:#fef3c7;color:#92400e">
             ✅ Duyệt {{ $choDuyet }} câu đang chờ
         </a>
@@ -71,7 +71,7 @@
                         <span class="sp-badge sp-badge-gray">{{ $cq->nguon->nhanHien() }}</span>
                     </td>
                     <td>
-                        <a href="{{ route('teacher.questions') }}?edit={{ $cq->id }}"
+                        <a href="{{ route('teacher.questions') }}?edit={{ $cq->id }}" wire:navigate
                            class="sp-btn sp-btn-outline text-xs py-1 px-2">Sửa</a>
                     </td>
                 </tr>

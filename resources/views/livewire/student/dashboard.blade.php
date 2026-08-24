@@ -57,18 +57,18 @@
         <div class="sp-card p-5 flex flex-col gap-3">
             <h2 class="font-bold text-base mb-1" style="color:var(--sp-text-primary)">Bắt đầu ngay</h2>
 
-            <a href="{{ route('student.thi') }}"
+            <a href="{{ route('student.thi') }}" wire:navigate.hover
                class="sp-btn sp-btn-primary w-full justify-center py-3 text-sm font-semibold">
                 ⚡ Thi thử ngay
             </a>
 
-            <a href="{{ route('student.on-tap') }}"
+            <a href="{{ route('student.on-tap') }}" wire:navigate
                class="sp-btn w-full justify-center py-3 text-sm font-semibold"
                style="background:#fef3c7;color:#92400e;border:none">
                 🔄 Ôn điểm yếu
             </a>
 
-            <a href="{{ route('student.thi') }}?mode=kho"
+            <a href="{{ route('student.thi') }}?mode=kho" wire:navigate.hover
                class="sp-btn sp-btn-outline w-full justify-center py-3 text-sm font-semibold">
                 🔥 Thử thách khó
             </a>
@@ -194,7 +194,7 @@
                             @endif
                         </td>
                         <td>
-                            <a href="{{ route('exam.result', $lt) }}"
+                            <a href="{{ route('exam.result', $lt) }}" wire:navigate
                                class="sp-btn sp-btn-outline text-xs py-1 px-2">Xem lại</a>
                         </td>
                     </tr>

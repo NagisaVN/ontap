@@ -93,7 +93,7 @@
             <p class="text-sm" style="color:var(--sp-text-muted)">
                 Upload PDF/Ảnh để AI trích xuất câu hỏi mới
             </p>
-            <a href="{{ route('teacher.ocr') }}" class="sp-btn sp-btn-primary mt-4 inline-flex">
+            <a href="{{ route('teacher.ocr') }}" wire:navigate class="sp-btn sp-btn-primary mt-4 inline-flex">
                 📄 Upload tài liệu
             </a>
         </div>
