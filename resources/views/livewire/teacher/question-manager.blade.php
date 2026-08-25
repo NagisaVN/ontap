@@ -200,12 +200,22 @@
             <div class="sticky bottom-0 bg-white border-t px-6 py-4 flex justify-end gap-3"
                  style="border-color:var(--sp-border)">
                 <button wire:click="$set('showModal', false)" class="sp-btn sp-btn-outline">Hủy</button>
-                <button wire:click="luu" class="sp-btn sp-btn-primary">
-                    <svg wire:loading wire:target="luu" class="w-4 h-4 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                              d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
-                    </svg>
-                    💾 Lưu câu hỏi
+                <button wire:click="luu" wire:loading.attr="disabled" wire:target="luu" class="sp-btn sp-btn-primary">
+
+                    {{-- Default state --}}
+                    <span wire:loading.remove wire:target="luu" class="flex items-center gap-2">
+                        💾 Lưu câu hỏi
+                    </span>
+
+                    {{-- Loading state --}}
+                    <span wire:loading wire:target="luu" class="flex items-center gap-2">
+                        <svg class="w-4 h-4 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                  d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                        </svg>
+                        <span>Đang lưu...</span>
+                    </span>
+
                 </button>
             </div>
         </div>

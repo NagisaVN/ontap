@@ -6,6 +6,7 @@ use App\Jobs\ProcessAIQuestionExtractionJob;
 use App\Models\SubSubject;
 use App\Models\Subject;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Validation\ValidationException;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
 use Livewire\Attributes\Validate;
@@ -30,23 +31,34 @@ class OcrUpload extends Component
 
     public function upload(): void
     {
-        $this->validate();
-        $this->uploading = true;
+        try {
+            $this->validate();
 
-        $mime     = $this->file->getMimeType();
-        $path     = $this->file->store('ocr-uploads', 'local');
+            $this->uploading = true;
 
-        ProcessAIQuestionExtractionJob::dispatch(
-            filePath:      $path,
-            chuongId:      $this->chuongId,
-            nguoiUploadId: Auth::id(),
-            mimeType:      $mime,
-        )->onQueue('ai');
+            $mime = $this->file->getMimeType();
+            $path = $this->file->store('ocr-uploads', 'local');
 
-        $this->file        = null;
-        $this->uploading   = false;
-        $this->dispatched  = true;
-        $this->message     = 'File đang được AI xử lý. Câu hỏi sẽ xuất hiện ở trang "Chờ duyệt" sau vài phút.';
+            ProcessAIQuestionExtractionJob::dispatch(
+                filePath:      $path,
+                chuongId:      $this->chuongId,
+                nguoiUploadId: Auth::id(),
+                mimeType:      $mime,
+            )->onQueue('ai');
+
+            $this->file       = null;
+            $this->dispatched = true;
+            $this->message    = 'File đang được AI xử lý. Câu hỏi sẽ xuất hiện ở trang "Chờ duyệt" sau vài phút.';
+        } catch (ValidationException $e) {
+            // Re-throw so Livewire can populate @error() directives in the view.
+            throw $e;
+        } catch (\Throwable $e) {
+            $this->addError('file', 'Đã xảy ra lỗi khi xử lý file. Vui lòng thử lại.');
+            throw $e;
+        } finally {
+            // Always reset the spinner — prevents the button from being stuck.
+            $this->uploading = false;
+        }
     }
 
     public function render()
@@ -56,3 +68,4 @@ class OcrUpload extends Component
         ]);
     }
 }
+

@@ -32,17 +32,29 @@
         {{-- Dropzone --}}
         <div>
             <label class="sp-label">File tài liệu *</label>
-            <label for="file-upload"
-                   class="flex flex-col items-center justify-center w-full h-40 border-2 border-dashed
-                          rounded-xl cursor-pointer transition-colors"
-                   style="border-color:var(--sp-primary-light);background:#fafafe"
-                   x-data="{ dragging: false }"
-                   @dragover.prevent="dragging = true"
-                   @dragleave="dragging = false"
-                   @drop.prevent="dragging = false"
-                   :style="dragging ? 'border-color:var(--sp-primary);background:#eef2ff;' : ''">
+            <div x-data="{ isDropping: false }"
+                 x-on:dragover.prevent="isDropping = true"
+                 x-on:dragleave.prevent="isDropping = false"
+                 x-on:drop.prevent="
+                     isDropping = false;
+                     if ($event.dataTransfer.files.length) {
+                         @this.upload('file', $event.dataTransfer.files[0])
+                     }
+                 "
+                 :class="{ 'border-indigo-400 bg-indigo-50': isDropping, 'border-gray-300 bg-[#fafafe]': !isDropping }"
+                 class="relative flex flex-col items-center justify-center w-full h-40 border-2 border-dashed rounded-xl cursor-pointer transition-colors"
+                 style="border-color:var(--sp-primary-light);background:#fafafe"
+                 :style="isDropping ? 'border-color:var(--sp-primary);background:#eef2ff;' : ''">
+
+                {{-- Invisible full-area file input for click-to-browse --}}
+                <input type="file"
+                       wire:model="file"
+                       accept=".pdf,.jpg,.jpeg,.png,.webp"
+                       class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10">
+
+                {{-- Drop zone content --}}
                 @if($file)
-                    <div class="text-center">
+                    <div class="text-center pointer-events-none">
                         <div class="text-3xl mb-2">📎</div>
                         <p class="font-medium text-sm">{{ $file->getClientOriginalName() }}</p>
                         <p class="text-xs mt-1" style="color:var(--sp-text-muted)">
@@ -50,17 +62,13 @@
                         </p>
                     </div>
                 @else
-                    <div class="text-center">
+                    <div class="text-center pointer-events-none">
                         <div class="text-4xl mb-2">☁️</div>
                         <p class="font-medium text-sm">Kéo thả file vào đây hoặc click để chọn</p>
                         <p class="text-xs mt-1" style="color:var(--sp-text-muted)">PDF, JPG, PNG, WEBP — tối đa 10MB</p>
                     </div>
                 @endif
-                <input id="file-upload" type="file"
-                       wire:model="file"
-                       accept=".pdf,.jpg,.jpeg,.png,.webp"
-                       class="hidden">
-            </label>
+            </div>
             @error('file') <p class="text-xs text-red-500 mt-1">{{ $message }}</p> @enderror
             <div wire:loading wire:target="file" class="text-xs mt-2" style="color:var(--sp-primary)">
                 ⏳ Đang upload...
@@ -95,8 +103,9 @@
 
         <button wire:click="upload"
                 wire:loading.attr="disabled"
-                class="sp-btn sp-btn-primary w-full justify-center py-3 text-base font-semibold"
-                :disabled="{{ $uploading ? 'true' : 'false' }}">
+                wire:loading.class="opacity-75 cursor-not-allowed"
+                wire:target="upload"
+                class="sp-btn sp-btn-primary w-full justify-center py-3 text-base font-semibold">
             <svg wire:loading wire:target="upload" class="w-5 h-5 animate-spin"
                  fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
