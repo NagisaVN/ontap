@@ -30,8 +30,8 @@ return [
 
     'base_url' => 'https://generativelanguage.googleapis.com',
 
-    // Timeout HTTP (giây)
-    'timeout'  => (int) env('GEMINI_TIMEOUT', 90),
+    // Timeout HTTP (giây) — 180s để xử lý PDF lớn nhiều câu hỏi
+    'timeout'  => (int) env('GEMINI_TIMEOUT', 180),
 
     // Retry khi bị rate-limit (429)
     'retry' => [
@@ -52,6 +52,13 @@ return [
         'temperature'     => 0.4,
         'topP'            => 0.95,
         'topK'            => 40,
-        'maxOutputTokens' => 8192,
+        // Tăng token limit để tránh JSON bị cắt giữa chừng khi PDF lớn
+        'maxOutputTokens' => 16384,
+        // !! KHÔNG dùng 'responseMimeType' => 'application/json' ở đây !!
+        // Lý do: khi set responseMimeType, Gemini KHÔNG trả text vào
+        // candidates[0].content.parts[0].text mà thay đổi response structure,
+        // khiến text extractor trả về '' và json_decode('') = null nhưng
+        // json_last_error() = JSON_ERROR_NONE => lỗi "No error" khó debug.
+        // JSON được đảm bảo sạch bằng prompt instruction + parseJsonResponse().
     ],
 ];

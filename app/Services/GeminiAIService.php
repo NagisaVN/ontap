@@ -55,11 +55,46 @@ Yêu cầu output là JSON array CHÍNH XÁC theo cấu trúc sau (không có te
   }
 ]
 
-Quy tắc:
-- Chỉ xuất JSON, không có markdown code fence, không có giải thích
-- do_kho: "de" (câu cơ bản), "trung_binh" (cần hiểu), "kho" (phân tích sâu)
+Quy tắc chung:
+- Chỉ xuất JSON, không có markdown code fence, không có giải thích thêm
 - la_dap_an: true cho đáp án ĐÚNG, false cho đáp án SAI
 - Nếu không có đáp án đúng rõ ràng, đặt la_dap_an=false cho tất cả và thêm ghi chú vào noi_dung
+
+═══ TIÊU CHÍ PHÂN LOẠI ĐỘ KHÓ (do_kho) — áp dụng nghiêm túc ═══
+
+"de" — Câu NHẬN BIẾT / GHI NHỚ (tương đương Bloom cấp 1–2):
+  • Hỏi thẳng định nghĩa, tên gọi, công thức, sự kiện ("X là gì?", "Công thức Y là?")
+  • Học sinh chỉ cần nhớ, không cần suy luận hay tính toán
+  • Các đáp án sai bị loại trừ ngay, không gây nhầm lẫn
+  • Ví dụ điển hình:
+      - "Subject + to be + V-ing là thì gì?"
+      - "Thủ đô của Nhật Bản là?"
+      - "Vitamin C có nhiều trong loại quả nào?"
+      - "Hàm số f(x) = x² có đạo hàm là?"
+
+"trung_binh" — Câu HIỂU / VẬN DỤNG (Bloom cấp 3–4):
+  • Yêu cầu hiểu bản chất rồi áp dụng vào tình huống cụ thể
+  • Có thể có bẫy ngữ pháp, ngữ nghĩa hoặc số liệu gây nhầm
+  • Các đáp án sai trông hợp lý, cần đọc kỹ để loại trừ
+  • Ví dụ điển hình:
+      - "Chọn dạng đúng của động từ trong câu: She ___ here since 2020."
+      - "Tính giá trị của biểu thức 3x² + 2x − 1 khi x = −2"
+      - "Đoạn văn chủ yếu đề cập đến vấn đề gì?"
+      - "Câu nào sau đây dùng đúng thì hiện tại hoàn thành?"
+
+"kho" — Câu PHÂN TÍCH / ĐÁNH GIÁ / SUY LUẬN (Bloom cấp 5–6):
+  • Phải kết hợp nhiều kiến thức hoặc suy luận nhiều bước
+  • Nhiều đáp án gây nhầm lẫn cao, phải có lý luận để chọn
+  • Hỏi về ý nghĩa ẩn, ngụ ý, hậu quả, so sánh phương án
+  • Ví dụ điển hình:
+      - "Tác giả dùng hình ảnh 'bóng tối' nhằm ám chỉ điều gì?"
+      - "Phương pháp nào hiệu quả nhất để giải bài toán trên? Tại sao?"
+      - Câu đọc hiểu yêu cầu suy ra thái độ/quan điểm của tác giả
+      - Câu toán tích hợp nhiều công thức hoặc biến đổi đại số phức tạp
+
+QUY TẮC TIE-BREAK khi phân vân:
+  → Câu có BẪY hoặc cần VẬN DỤNG: chọn mức CAO HƠN
+  → Câu chỉ hỏi thẳng một SỰ KIỆN hoặc ĐỊNH NGHĨA: chọn mức THẤP HƠN
 PROMPT;
 
         $response = $this->guiYeuCauVision($prompt, $base64Content, $mimeType);
@@ -215,6 +250,10 @@ PROMPT;
 
     /**
      * Thực hiện HTTP POST tới Gemini API với retry tự động.
+     *
+     * CHÚ Ý retry:
+     * - Retry chỉ khi bị rate-limit (429) hoặc lỗi server tạm thời (500, 503)
+     * - KHÔNG retry ConnectionException (cURL timeout) vì làm mất gấp đôi thời gian
      */
     private function thucHienRequest(string $url, array $body): string
     {
@@ -226,8 +265,14 @@ PROMPT;
             ->retry(
                 $retryConfig['times'],
                 $retryConfig['sleep'],
-                fn(\Exception $e) => $e instanceof \Illuminate\Http\Client\RequestException
-                    && in_array($e->response->status(), [429, 500, 503])
+                function (\Exception $e, $request) {
+                    // Chỉ retry khi bị rate-limit hoặc lỗi server, KHÔNG retry timeout
+                    if ($e instanceof \Illuminate\Http\Client\ConnectionException) {
+                        return false;
+                    }
+                    return $e instanceof \Illuminate\Http\Client\RequestException
+                        && in_array($e->response->status(), [429, 500, 503]);
+                }
             )
             ->post($url, $body);
 
@@ -235,8 +280,8 @@ PROMPT;
             $status = $response->status();
             $error  = $response->json('error.message', 'Unknown error');
             Log::error("[GeminiAIService] API thất bại: HTTP {$status} — {$error}", [
-                'url'   => $url,
-                'model' => $this->model,
+                'url'         => $url,
+                'model'       => $this->model,
                 'api_version' => $this->apiVersion,
             ]);
             throw new RuntimeException("Gemini API lỗi {$status}: {$error}");
@@ -246,7 +291,14 @@ PROMPT;
         $text = $response->json('candidates.0.content.parts.0.text', '');
 
         if (empty($text)) {
+            // Log toàn bộ response để phát hiện thay đổi response structure từ Gemini
             $finishReason = $response->json('candidates.0.finishReason', 'UNKNOWN');
+            Log::error("[GeminiAIService] Gemini trả về text rỗng", [
+                'finishReason'   => $finishReason,
+                'full_response'  => $response->json(),  // dump toàn bộ response structure
+                'model'          => $this->model,
+                'api_version'    => $this->apiVersion,
+            ]);
             throw new RuntimeException("Gemini trả về nội dung trống. FinishReason: {$finishReason}");
         }
 
@@ -255,19 +307,40 @@ PROMPT;
 
     /**
      * Parse JSON từ response AI (loại bỏ markdown code fence nếu có).
+     * Có 3 lớp bảo vệ trước khi từng lỗi JSON:
+     *  1. Xóa code fence và ký tự kiểm soát (\r) gây "Control character error"
+     *  2. Cố gắng vá JSON bị cắt giữa chừng (maxOutputTokens quá thấp)
+     *  3. Nếu vẫn lỗi: log toàn bộ raw text để debug dễ hơn
      */
     private function parseJsonResponse(string $rawText, string $context): array
     {
-        // Xóa markdown code fence nếu AI thêm vào
+        // Lớp 1: Xóa markdown code fence + ký tự kiểm soát
         $clean = preg_replace('/^```(?:json)?\s*|\s*```$/m', '', trim($rawText));
+        $clean = str_replace(["\r\n", "\r"], "\n", $clean); // chuẩn hóa line endings
         $clean = trim($clean);
 
         $data = json_decode($clean, true);
 
+        // Lớp 2: Nếu lỗi và output trông giống mảng bị cắt — thử “vá” lại
+        if ((json_last_error() !== JSON_ERROR_NONE || !is_array($data)) && str_starts_with($clean, '[')) {
+            // Tìm vị trí ”}“ cuối cùng để cắt bỏ phần incomplete
+            $lastClose = strrpos($clean, '}');
+            if ($lastClose !== false) {
+                $salvaged = substr($clean, 0, $lastClose + 1) . ']';
+                $data     = json_decode($salvaged, true);
+                if (json_last_error() === JSON_ERROR_NONE && is_array($data)) {
+                    Log::warning("[GeminiAIService:{$context}] JSON bị cắt (maxOutputTokens?), đã vá thành công: " . count($data) . " câu hỏi");
+                    return $data;
+                }
+            }
+        }
+
+        // Lớp 3: Vẫn lỗi — log đầy đủ và throw
         if (json_last_error() !== JSON_ERROR_NONE || !is_array($data)) {
-            Log::warning("[GeminiAIService:{$context}] JSON parse thất bại", [
-                'raw'   => mb_substr($rawText, 0, 500),
-                'error' => json_last_error_msg(),
+            Log::error("[GeminiAIService:{$context}] JSON parse thất bại", [
+                'json_error'  => json_last_error_msg(),
+                'raw_length'  => strlen($rawText),
+                'raw_preview' => mb_substr($rawText, 0, 2000), // nhiều hơn để debug
             ]);
             throw new RuntimeException("Gemini trả về JSON không hợp lệ trong {$context}: " . json_last_error_msg());
         }

@@ -7,7 +7,7 @@
     </div>
     @endif
 
-    {{-- Header + Batch --}}
+    {{-- Header --}}
     <div class="flex items-center justify-between">
         <div>
             <h2 class="text-lg font-bold">Câu hỏi chờ duyệt</h2>
@@ -15,15 +15,40 @@
                 {{ $cauHois->total() }} câu đang chờ xác nhận từ OCR/AI
             </p>
         </div>
-        @if(!empty($selected))
-        <button wire:click="duyetHangLoat"
-                class="sp-btn sp-btn-accent">
-            ✅ Duyệt {{ count($selected) }} câu đã chọn
+
+        {{-- Nút tự duyệt tất cả — luôn hiện --}}
+        @if($cauHois->total() > 0)
+        <button wire:click="duyetTatCa"
+                wire:confirm="Tự duyệt toàn bộ {{ $cauHois->total() }} câu hỏi chờ duyệt? Teacher sẽ không xem lại từng câu."
+                wire:loading.attr="disabled"
+                class="sp-btn sp-btn-primary">
+            <span wire:loading.remove wire:target="duyetTatCa">⚡ Tự duyệt tất cả ({{ $cauHois->total() }})</span>
+            <span wire:loading wire:target="duyetTatCa">⏳ Đang duyệt...</span>
         </button>
         @endif
     </div>
 
+    {{-- Toolbar bulk action — chỉ hiện khi đã chọn --}}
+    @if(!empty($selected))
+    <div class="flex items-center gap-2 px-4 py-2 rounded-lg" style="background:#eef2ff">
+        <span class="text-sm font-medium" style="color:#4338ca">
+            Đã chọn {{ count($selected) }} câu
+        </span>
+        <div class="flex items-center gap-2 ml-auto">
+            <button wire:click="duyetHangLoat" class="sp-btn sp-btn-accent">
+                ✅ Duyệt {{ count($selected) }} câu đã chọn
+            </button>
+            <button wire:click="tuChoiHangLoat"
+                    wire:confirm="Xóa vĩnh viễn {{ count($selected) }} câu hỏi đã chọn? Hành động này không thể hoàn tác."
+                    class="sp-btn sp-btn-danger">
+                ❌ Từ chối {{ count($selected) }} câu đã chọn
+            </button>
+        </div>
+    </div>
+    @endif
+
     {{-- List --}}
+
     <div class="space-y-3">
         @forelse($cauHois as $cq)
         <div class="sp-card p-5 animate-slide-up" wire:key="cq-{{ $cq->id }}">

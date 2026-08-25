@@ -41,6 +41,36 @@ class PendingReview extends Component
         session()->flash('success', "Đã duyệt {$so} câu hỏi.");
     }
 
+    public function tuChoiHangLoat(): void
+    {
+        if (empty($this->selected)) return;
+
+        $so = count($this->selected);
+
+        // Xóa hẳn khỏi DB — dữ liệu OCR rác không cần giữ lại
+        Question::whereIn('id', $this->selected)->delete();
+
+        $this->selected = [];
+        session()->flash('success', "Đã từ chối và xóa {$so} câu hỏi rác.");
+    }
+
+    /**
+     * Tự duyệt toàn bộ câu hỏi đang chờ (tất cả trang, không cần chọn từng cái).
+     * Dùng khi teacher tin tưởng kết quả OCR của AI.
+     */
+    public function duyetTatCa(): void
+    {
+        $so = Question::choDuyet()->count();
+
+        if ($so === 0) return;
+
+        Question::choDuyet()->update(['trang_thai' => 'da_duyet']);
+
+        $this->selected = [];
+        $this->resetPage();
+        session()->flash('success', "✅ Đã tự duyệt toàn bộ {$so} câu hỏi.");
+    }
+
     public function render()
     {
         $cauHois = Question::choDuyet()

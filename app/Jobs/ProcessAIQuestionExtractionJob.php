@@ -19,8 +19,8 @@ class ProcessAIQuestionExtractionJob implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    public int $tries   = 2;
-    public int $timeout = 300; // PDF lớn cần nhiều thời gian hơn
+    public int $tries   = 1;    // PDF lớn có thể mất 2-3 phút; retry sẽ chỉ lãng phí thời gian
+    public int $timeout = 300; // 5 phút tối đa cho queue worker (Http timeout là 180s)
 
     /**
      * @param  string  $filePath       — Đường dẫn file trong Storage (VD: 'uploads/de_thi.pdf')
@@ -44,11 +44,21 @@ class ProcessAIQuestionExtractionJob implements ShouldQueue
             throw new \RuntimeException("File không tồn tại: {$this->filePath}");
         }
 
-        $fileContent    = Storage::get($this->filePath);
-        $base64Content  = base64_encode($fileContent);
+        $fileContent   = Storage::get($this->filePath);
+        $base64Content = base64_encode($fileContent);
 
         // 2. Gọi Gemini Vision để trích xuất câu hỏi
-        $danhSachCauHoi = $gemini->ocrTrichXuatCauHoi($base64Content, $this->mimeType);
+        try {
+            $danhSachCauHoi = $gemini->ocrTrichXuatCauHoi($base64Content, $this->mimeType);
+        } catch (\Exception $e) {
+            Log::error("[ProcessAIQuestionExtractionJob] Gemini API thất bại cho file {$this->filePath}: " . $e->getMessage(), [
+                'exception_class' => get_class($e),
+                'file'            => $e->getFile(),
+                'line'            => $e->getLine(),
+            ]);
+            // Re-throw để queue đánh dấu job là failed
+            throw $e;
+        }
 
         if (empty($danhSachCauHoi)) {
             Log::warning("[ProcessAIQuestionExtractionJob] AI không tìm thấy câu hỏi nào trong file.");
@@ -123,6 +133,11 @@ class ProcessAIQuestionExtractionJob implements ShouldQueue
 
     public function failed(Throwable $exception): void
     {
-        Log::error("[ProcessAIQuestionExtractionJob] Thất bại file {$this->filePath}: {$exception->getMessage()}");
+        Log::error("[ProcessAIQuestionExtractionJob] Thất bại file {$this->filePath}", [
+            'error'           => $exception->getMessage(),
+            'exception_class' => get_class($exception),
+            'file'            => $exception->getFile(),
+            'line'            => $exception->getLine(),
+        ]);
     }
 }
