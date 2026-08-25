@@ -15,12 +15,12 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Throwable;
 
-class ProcessAIQuestionExtractionJob implements ShouldQueue
+class GenerateAIQuestionsFromDocJob implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    public int $tries   = 1;    // PDF lớn có thể mất nhiều phút; retry sẽ chỉ lãng phí thời gian
-    public int $timeout = 600; // 10 phút tối đa — cho phép tối đa ~5-6 lần gọi API liên tiếp
+    public int $tries   = 1;
+    public int $timeout = 300; // Sinh câu hỏi tốn ít thời gian hơn quét toàn bộ PDF
 
     /**
      * @param  string  $filePath       — Đường dẫn file trong Storage (VD: 'uploads/de_thi.pdf')
@@ -33,11 +33,14 @@ class ProcessAIQuestionExtractionJob implements ShouldQueue
         public readonly int    $chuongId,
         public readonly int    $nguoiUploadId,
         public readonly string $mimeType = 'application/pdf',
+        public readonly int    $soLuongDe = 4,
+        public readonly int    $soLuongTrungBinh = 4,
+        public readonly int    $soLuongKho = 2,
     ) {}
 
     public function handle(GeminiAIService $gemini): void
     {
-        Log::info("[ProcessAIQuestionExtractionJob] Bắt đầu xử lý: {$this->filePath}");
+        Log::info("[GenerateAIQuestionsFromDocJob] Bắt đầu xử lý: {$this->filePath}");
 
         // 1. Đọc file và encode base64
         if (!Storage::exists($this->filePath)) {
@@ -47,71 +50,31 @@ class ProcessAIQuestionExtractionJob implements ShouldQueue
         $fileContent   = Storage::get($this->filePath);
         $base64Content = base64_encode($fileContent);
 
-        // 2. Trích xuất câu hỏi bằng Gemini — dùng chunked extraction cho PDF nhiều câu
-        $danhSachCauHoi   = [];
-        $maxBatches       = 8;    // Tối đa 8 lần gọi API (~160+ câu/lần = >1000 câu)
-        $minBatchSize     = 3;    // Nếu batch trả về ít hơn 3 câu → coi như hết tài liệu
-        $cauHoiCuoiCung   = null; // Nội dung câu cuối đã lấy — dùng làm anchor cho batch kế
-        $cauHoiCuoiCungPrev = ''; // Detect vòng lặp / ảo giác của Gemini
-
-        for ($batch = 1; $batch <= $maxBatches; $batch++) {
-            try {
-                if ($batch === 1) {
-                    // Lần đầu: trích xuất từ đầu tài liệu
-                    Log::info("[ProcessAIQuestionExtractionJob] Batch #{$batch}: trích xuất ban đầu...");
-                    $ketQuaBatch = $gemini->ocrTrichXuatCauHoi($base64Content, $this->mimeType);
-                } else {
-                    // Các lần sau: tiếp tục từ câu cuối cùng đã lấy
-                    Log::info("[ProcessAIQuestionExtractionJob] Batch #{$batch}: tiếp tục sau \"{$cauHoiCuoiCung}\"...");
-                    $ketQuaBatch = $gemini->ocrTrichXuatTiepTheo($base64Content, $this->mimeType, $cauHoiCuoiCung);
-                }
-            } catch (\Exception $e) {
-                Log::error("[ProcessAIQuestionExtractionJob] Gemini API thất bại ở batch #{$batch}: " . $e->getMessage(), [
-                    'exception_class' => get_class($e),
-                    'file'            => $e->getFile(),
-                    'line'            => $e->getLine(),
-                ]);
-                // Nếu batch đầu tiên lỗi — throw để job thất bại hoàn toàn
-                // Nếu batch >= 2 lỗi — dừng vòng lặp, lưu những gì đã có
-                if ($batch === 1) throw $e;
-                Log::warning("[ProcessAIQuestionExtractionJob] Dừng chunked extraction sớm ở batch #{$batch} do lỗi. Đã có " . count($danhSachCauHoi) . " câu.");
-                break;
-            }
-
-            $demBatch = count($ketQuaBatch);
-            Log::info("[ProcessAIQuestionExtractionJob] Batch #{$batch}: nhận được {$demBatch} câu hỏi.");
-
-            if ($demBatch === 0) {
-                Log::info("[ProcessAIQuestionExtractionJob] Batch #{$batch} trả về 0 câu — đã hết tài liệu.");
-                break;
-            }
-
-            $danhSachCauHoi = array_merge($danhSachCauHoi, $ketQuaBatch);
-            $cauHoiCuoiCung = end($ketQuaBatch)['noi_dung'] ?? '';
-
-            // Guard: Gemini bịa lại câu cũ (vòng lặp ảo giác)
-            if ($cauHoiCuoiCung === $cauHoiCuoiCungPrev) {
-                Log::warning("[ProcessAIQuestionExtractionJob] Phát hiện vòng lặp ảo giác ở batch #{$batch}, dừng lại.");
-                break;
-            }
-            $cauHoiCuoiCungPrev = $cauHoiCuoiCung;
-
-            // Nếu batch trả về ít hơn ngưỡng tối thiểu → có thể đã hết tài liệu
-            if ($demBatch < $minBatchSize) {
-                Log::info("[ProcessAIQuestionExtractionJob] Batch #{$batch} trả về {$demBatch} câu (<{$minBatchSize}) — coi như hết tài liệu.");
-                break;
-            }
+        // 2. Tạo câu hỏi bằng Gemini
+        try {
+            $danhSachCauHoi = $gemini->taoCauHoiTuTaiLieu(
+                $base64Content, 
+                $this->mimeType, 
+                $this->soLuongDe,
+                $this->soLuongTrungBinh,
+                $this->soLuongKho
+            );
+        } catch (\Exception $e) {
+            Log::error("[GenerateAIQuestionsFromDocJob] Gemini API thất bại: " . $e->getMessage(), [
+                'exception_class' => get_class($e),
+                'file'            => $e->getFile(),
+                'line'            => $e->getLine(),
+            ]);
+            throw $e;
         }
 
-        Log::info("[ProcessAIQuestionExtractionJob] Tổng số câu từ tất cả batches: " . count($danhSachCauHoi));
-
         if (empty($danhSachCauHoi)) {
-            Log::warning("[ProcessAIQuestionExtractionJob] AI không tìm thấy câu hỏi nào trong file.");
+            Log::warning("[GenerateAIQuestionsFromDocJob] AI không tạo được câu hỏi nào.");
             \Illuminate\Support\Facades\Cache::put('ocr_job_status_' . md5($this->filePath), 'done', 3600);
             return;
         }
 
-        Log::info("[ProcessAIQuestionExtractionJob] AI tìm thấy " . count($danhSachCauHoi) . " câu hỏi.");
+        Log::info("[GenerateAIQuestionsFromDocJob] AI đã tạo " . count($danhSachCauHoi) . " câu hỏi.");
 
         // 3. Lưu vào DB — trang_thai = cho_duyet (teacher cần duyệt trước khi dùng)
         $soLuuThanh = 0;
@@ -122,14 +85,14 @@ class ProcessAIQuestionExtractionJob implements ShouldQueue
                     $this->luuMotCauHoi($item, $index);
                     $soLuuThanh++;
                 } catch (Throwable $e) {
-                    Log::warning("[ProcessAIQuestionExtractionJob] Lỗi câu #{$index}: {$e->getMessage()}", [
+                    Log::warning("[GenerateAIQuestionsFromDocJob] Lỗi câu #{$index}: {$e->getMessage()}", [
                         'item' => $item,
                     ]);
                 }
             }
         });
 
-        Log::info("[ProcessAIQuestionExtractionJob] Hoàn tất: {$soLuuThanh}/" . count($danhSachCauHoi) . " câu đã lưu (trạng thái: chờ duyệt).");
+        Log::info("[GenerateAIQuestionsFromDocJob] Hoàn tất: {$soLuuThanh}/" . count($danhSachCauHoi) . " câu đã lưu (trạng thái: chờ duyệt).");
 
         // 4. Báo cho Frontend biết Job đã xong
         \Illuminate\Support\Facades\Cache::put('ocr_job_status_' . md5($this->filePath), 'done', 3600);
@@ -199,7 +162,7 @@ class ProcessAIQuestionExtractionJob implements ShouldQueue
 
     public function failed(Throwable $exception): void
     {
-        Log::error("[ProcessAIQuestionExtractionJob] Thất bại file {$this->filePath}", [
+        Log::error("[GenerateAIQuestionsFromDocJob] Thất bại file {$this->filePath}", [
             'error'           => $exception->getMessage(),
             'exception_class' => get_class($exception),
             'file'            => $exception->getFile(),

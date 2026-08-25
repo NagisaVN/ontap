@@ -18,7 +18,7 @@ class AdaptiveQuestionSynthesisJob implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    public int $tries   = 2;
+    public int $tries   = 20;
     public int $timeout = 180;
 
     /**
@@ -56,12 +56,29 @@ class AdaptiveQuestionSynthesisJob implements ShouldQueue
             'la_dap_an' => $lc->la_dap_an,
         ])->toArray();
 
-        // Gọi Gemini AI
-        $bienThe = $gemini->sinhBienTheCauHoi(
-            noiDungGoc: $cauHoiGoc->noi_dung,
-            luaChonGoc: $luaChonGoc,
-            soLuong:    $canSinh,
-        );
+        try {
+            // Gọi Gemini AI
+            $bienThe = $gemini->sinhBienTheCauHoi(
+                noiDungGoc: $cauHoiGoc->noi_dung,
+                luaChonGoc: $luaChonGoc,
+                soLuong:    $canSinh,
+            );
+        } catch (Throwable $e) {
+            $errorMsg = $e->getMessage();
+            Log::error("[AdaptiveQuestionSynthesisJob] Lỗi câu #{$this->cauHoiId}: {$errorMsg}");
+            
+            // Nếu dính Rate Limit (429), nhả Job về Queue để thử lại sau
+            if (str_contains($errorMsg, '429') || str_contains($errorMsg, 'Too Many Requests') || str_contains($errorMsg, 'quota')) {
+                $delay = 30; // Mặc định 30 giây
+                if (preg_match('/Please retry in ([\d\.]+)s/', $errorMsg, $matches)) {
+                    $delay = (int) ceil((float) $matches[1]) + 5; // Lấy thời gian Google yêu cầu + 5s bù trừ
+                }
+                Log::warning("[AdaptiveQuestionSynthesisJob] Dính Rate Limit 429. Trì hoãn {$delay} giây rồi thử lại...");
+                $this->release($delay);
+                return;
+            }
+            throw $e; // Throw lại nếu không phải lỗi 429
+        }
 
         if (empty($bienThe)) {
             Log::warning("[AdaptiveQuestionSynthesisJob] AI không sinh được biến thể cho câu #{$this->cauHoiId}");

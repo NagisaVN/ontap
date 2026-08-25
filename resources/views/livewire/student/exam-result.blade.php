@@ -48,8 +48,8 @@
         <div class="sp-card px-4 py-3">
             <div class="text-xs mb-1" style="color:var(--sp-text-muted)">Thời gian làm</div>
             <div class="font-semibold">
-                {{ $luotThi->bat_dau_luc && $luotThi->ket_thuc_luc
-                    ? $luotThi->bat_dau_luc->diffInMinutes($luotThi->ket_thuc_luc) . ' phút'
+                {{ $luotThi->thoi_gian_lam !== null
+                    ? (floor($luotThi->thoi_gian_lam / 60) > 0 ? floor($luotThi->thoi_gian_lam / 60) . ' phút ' : '') . ($luotThi->thoi_gian_lam % 60) . ' giây'
                     : '—' }}
             </div>
         </div>
@@ -140,13 +140,30 @@
                                     {!! Str::markdown($ketQua->giai_thich_ai) !!}
                                 </div>
                             @elseif(!$daDung)
-                                <div class="flex items-center gap-2 text-xs" style="color:var(--sp-text-muted)">
-                                    <svg class="w-4 h-4 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                              d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
-                                    </svg>
-                                    AI đang phân tích, tải lại trang sau vài giây...
+                                <div class="mt-2 text-center">
+                                    <button wire:click="generateExplanation({{ $ketQua->id }})"
+                                            wire:loading.attr="disabled"
+                                            class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors
+                                                   bg-white border border-indigo-200 text-indigo-700 hover:bg-indigo-50 shadow-sm
+                                                   disabled:opacity-50 disabled:cursor-not-allowed">
+                                        <span wire:loading.remove wire:target="generateExplanation({{ $ketQua->id }})">
+                                            🤖 Bấm để AI giải thích câu này
+                                        </span>
+                                        <span wire:loading wire:target="generateExplanation({{ $ketQua->id }})" style="display: none;" class="inline-flex items-center gap-2">
+                                            <svg class="w-4 h-4 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                      d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                                            </svg>
+                                            AI đang phân tích...
+                                        </span>
+                                    </button>
                                 </div>
+                                @if(session()->has('error_' . $ketQua->id))
+                                    <div class="mt-3 text-xs text-red-600 bg-red-50 p-2 rounded border border-red-100 flex items-center gap-2">
+                                        <span>⚠️</span> {{ session('error_' . $ketQua->id) }}
+                                    </div>
+                                @endif
+
                             @else
                                 <p class="text-xs" style="color:var(--sp-text-muted)">Bạn đã trả lời đúng câu này! 🎉</p>
                             @endif

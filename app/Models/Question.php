@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -36,6 +37,18 @@ class Question extends Model
     // ---------------------------------------------------------------
     // Scopes
     // ---------------------------------------------------------------
+
+    /** ID hiển thị động theo mã môn học: VD "TIN01-120", "CSDL-34" */
+    protected function maDinhDanh(): Attribute
+    {
+        return Attribute::make(
+            get: function () {
+                $maMon = $this->chuong?->monHoc?->ma_mon;
+                $prefix = $maMon ? strtoupper($maMon) : 'Q';
+                return "{$prefix}-{$this->id}";
+            }
+        );
+    }
 
     /** Chỉ lấy câu hỏi đã được duyệt — dùng trong MatrixGenerationService */
     public function scopeDaDuyet($query)

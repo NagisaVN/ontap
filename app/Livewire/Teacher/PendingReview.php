@@ -14,7 +14,51 @@ class PendingReview extends Component
 {
     use WithPagination;
 
-    public array $selected = [];
+    public array $selected         = [];
+    public bool  $chonTatCa        = false;
+    public bool  $chonTatCaToanBo  = false; // true khi đã chọn toàn bộ (vượt qua phân trang)
+
+    /** Khi user bỏ chọn tay một câu — tự bỏ tick "Chọn tất cả" */
+    public function updatedSelected(): void
+    {
+        $this->chonTatCa       = false;
+        $this->chonTatCaToanBo = false;
+    }
+
+    /** Toggle "Chọn tất cả" — chỉ chọn các ID đang hiển thị trang hiện tại */
+    public function toggleChonTatCa(): void
+    {
+        $this->chonTatCaToanBo = false;
+        if ($this->chonTatCa) {
+            $this->selected = Question::choDuyet()
+                ->latest()
+                ->paginate(10, ['*'], 'page', $this->getPage())
+                ->pluck('id')
+                ->map(fn($id) => (string) $id)
+                ->toArray();
+        } else {
+            $this->selected = [];
+        }
+    }
+
+    /** Chọn TOÀN BỘ — nạp tất cả ID vượt qua phân trang */
+    public function chonTatCaToanBoAction(): void
+    {
+        $this->selected = Question::choDuyet()
+            ->latest()
+            ->pluck('id')
+            ->map(fn($id) => (string) $id)
+            ->toArray();
+        $this->chonTatCaToanBo = true;
+    }
+
+    /** Bỏ chọn toàn bộ, quay lại trạng thái ban đầu */
+    public function boChonTatCa(): void
+    {
+        $this->selected        = [];
+        $this->chonTatCa       = false;
+        $this->chonTatCaToanBo = false;
+    }
 
     public function duyet(int $id): void
     {
@@ -37,7 +81,9 @@ class PendingReview extends Component
             ->update(['trang_thai' => 'da_duyet']);
 
         $so = count($this->selected);
-        $this->selected = [];
+        $this->selected        = [];
+        $this->chonTatCa       = false;
+        $this->chonTatCaToanBo = false;
         session()->flash('success', "Đã duyệt {$so} câu hỏi.");
     }
 
@@ -50,25 +96,10 @@ class PendingReview extends Component
         // Xóa hẳn khỏi DB — dữ liệu OCR rác không cần giữ lại
         Question::whereIn('id', $this->selected)->delete();
 
-        $this->selected = [];
+        $this->selected        = [];
+        $this->chonTatCa       = false;
+        $this->chonTatCaToanBo = false;
         session()->flash('success', "Đã từ chối và xóa {$so} câu hỏi rác.");
-    }
-
-    /**
-     * Tự duyệt toàn bộ câu hỏi đang chờ (tất cả trang, không cần chọn từng cái).
-     * Dùng khi teacher tin tưởng kết quả OCR của AI.
-     */
-    public function duyetTatCa(): void
-    {
-        $so = Question::choDuyet()->count();
-
-        if ($so === 0) return;
-
-        Question::choDuyet()->update(['trang_thai' => 'da_duyet']);
-
-        $this->selected = [];
-        $this->resetPage();
-        session()->flash('success', "✅ Đã tự duyệt toàn bộ {$so} câu hỏi.");
     }
 
     public function render()

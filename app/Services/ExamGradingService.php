@@ -74,6 +74,7 @@ class ExamGradingService
                 // Dispatch Adaptive AI Job nếu sai >= 3 lần
                 if (!$dungSai && $thongKe->so_lan_sai >= 3) {
                     AdaptiveQuestionSynthesisJob::dispatch($cauHoiId, $luotThi->nguoi_dung_id)
+                        ->delay(now()->addMinutes(5))
                         ->onQueue('ai');
                 }
             }
@@ -89,7 +90,7 @@ class ExamGradingService
                 'diem_so'      => $diemSo,
                 'so_cau_dung'  => $soCauDung,
                 'thoi_gian_lam'=> $luotThi->bat_dau_luc
-                    ? now()->diffInSeconds($luotThi->bat_dau_luc)
+                    ? (int) abs(now()->diffInSeconds($luotThi->bat_dau_luc))
                     : null,
                 'trang_thai'   => 'hoan_thanh',
                 'ket_thuc_luc' => now(),
@@ -100,11 +101,6 @@ class ExamGradingService
                 $this->tienDoService->capNhatTienDo($luotThi->nguoi_dung_id, $chuongId);
             }
 
-            // --- 5. Dispatch Explainable AI Job cho câu sai ---
-            if (!empty($cauHoiSai)) {
-                GenerateExplainableAIJob::dispatch($luotThi->id, $cauHoiSai)
-                    ->onQueue('ai');
-            }
 
             return $luotThi;
         });

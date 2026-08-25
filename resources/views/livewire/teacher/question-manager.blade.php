@@ -66,7 +66,7 @@
                 <tbody>
                     @forelse($cauHois as $cq)
                     <tr wire:key="cq-{{ $cq->id }}">
-                        <td class="text-xs text-center" style="color:var(--sp-text-muted)">#{{ $cq->id }}</td>
+                        <td class="text-xs text-center font-mono font-semibold" style="color:var(--sp-text-muted)">{{ $cq->ma_dinh_danh }}</td>
                         <td class="max-w-xs">
                             <p class="text-sm font-medium leading-snug">{{ Str::limit($cq->noi_dung, 70) }}</p>
                         </td>

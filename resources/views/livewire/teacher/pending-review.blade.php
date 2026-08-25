@@ -7,7 +7,7 @@
     </div>
     @endif
 
-    {{-- Header --}}
+    {{-- Header + Batch --}}
     <div class="flex items-center justify-between">
         <div>
             <h2 class="text-lg font-bold">Câu hỏi chờ duyệt</h2>
@@ -15,27 +15,10 @@
                 {{ $cauHois->total() }} câu đang chờ xác nhận từ OCR/AI
             </p>
         </div>
-
-        {{-- Nút tự duyệt tất cả — luôn hiện --}}
-        @if($cauHois->total() > 0)
-        <button wire:click="duyetTatCa"
-                wire:confirm="Tự duyệt toàn bộ {{ $cauHois->total() }} câu hỏi chờ duyệt? Teacher sẽ không xem lại từng câu."
-                wire:loading.attr="disabled"
-                class="sp-btn sp-btn-primary">
-            <span wire:loading.remove wire:target="duyetTatCa">⚡ Tự duyệt tất cả ({{ $cauHois->total() }})</span>
-            <span wire:loading wire:target="duyetTatCa">⏳ Đang duyệt...</span>
-        </button>
-        @endif
-    </div>
-
-    {{-- Toolbar bulk action — chỉ hiện khi đã chọn --}}
-    @if(!empty($selected))
-    <div class="flex items-center gap-2 px-4 py-2 rounded-lg" style="background:#eef2ff">
-        <span class="text-sm font-medium" style="color:#4338ca">
-            Đã chọn {{ count($selected) }} câu
-        </span>
-        <div class="flex items-center gap-2 ml-auto">
-            <button wire:click="duyetHangLoat" class="sp-btn sp-btn-accent">
+        @if(!empty($selected))
+        <div class="flex items-center gap-2">
+            <button wire:click="duyetHangLoat"
+                    class="sp-btn sp-btn-accent">
                 ✅ Duyệt {{ count($selected) }} câu đã chọn
             </button>
             <button wire:click="tuChoiHangLoat"
@@ -44,11 +27,59 @@
                 ❌ Từ chối {{ count($selected) }} câu đã chọn
             </button>
         </div>
+        @endif
+    </div>
+
+    {{-- Select All bar --}}
+    @if($cauHois->total() > 0)
+    <div class="sp-card px-4 py-2.5" style="border-style:dashed">
+
+        {{-- Dòng 1: Checkbox chọn trang hiện tại --}}
+        <div class="flex items-center gap-3">
+            <input type="checkbox"
+                   id="chon-tat-ca"
+                   wire:model.live="chonTatCa"
+                   wire:change="toggleChonTatCa"
+                   class="w-4 h-4 cursor-pointer accent-indigo-500">
+            <label for="chon-tat-ca" class="text-sm cursor-pointer select-none"
+                   style="color:var(--sp-text-muted)">
+                @if($chonTatCaToanBo)
+                    ✅ Đã chọn <strong>tất cả {{ $cauHois->total() }} câu hỏi</strong>
+                @elseif($chonTatCa)
+                    ✅ Đã chọn tất cả <strong>{{ count($selected) }} câu</strong> trên trang này
+                @elseif(!empty($selected))
+                    Đã chọn {{ count($selected) }} câu — chọn hết trang này trước
+                @else
+                    Chọn tất cả câu trên trang này
+                @endif
+            </label>
+        </div>
+
+        {{-- Dòng 2: Banner mở rộng (chỉ hiện khi đã chọn hết trang) --}}
+        @if($chonTatCa && !$chonTatCaToanBo)
+        <div class="mt-2 pt-2 text-sm text-center" style="border-top:1px dashed #e2e8f0">
+            Bạn đang chọn <strong>{{ count($selected) }} câu</strong> trên trang này.
+            <button wire:click="chonTatCaToanBoAction"
+                    class="font-semibold underline ml-1"
+                    style="color:#6366f1">
+                Chọn tất cả {{ $cauHois->total() }} câu chờ duyệt
+            </button>
+        </div>
+        @elseif($chonTatCaToanBo)
+        <div class="mt-2 pt-2 text-sm text-center" style="border-top:1px dashed #e2e8f0;color:#059669">
+            ✅ Đã chọn toàn bộ <strong>{{ $cauHois->total() }} câu</strong>.
+            <button wire:click="boChonTatCa"
+                    class="font-semibold underline ml-1"
+                    style="color:#6366f1">
+                Bỏ chọn tất cả
+            </button>
+        </div>
+        @endif
+
     </div>
     @endif
 
     {{-- List --}}
-
     <div class="space-y-3">
         @forelse($cauHois as $cq)
         <div class="sp-card p-5 animate-slide-up" wire:key="cq-{{ $cq->id }}">

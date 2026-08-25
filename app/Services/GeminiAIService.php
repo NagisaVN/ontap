@@ -16,8 +16,11 @@ class GeminiAIService
 
     public function __construct()
     {
-        $this->apiKey     = config('gemini.api_key', '');
-        $this->model      = config('gemini.model', 'gemini-2.0-flash');
+        // Hỗ trợ nhiều API Key cách nhau bằng dấu phẩy
+        $keys = array_filter(array_map('trim', explode(',', config('gemini.api_key', ''))));
+        $this->apiKey = count($keys) > 0 ? $keys[array_rand($keys)] : '';
+        
+        $this->model      = config('gemini.model', 'gemini-3.6-flash');
         $this->baseUrl    = rtrim(config('gemini.base_url'), '/');
         $this->apiVersion = config('gemini.api_version', 'v1');
         $this->timeout    = config('gemini.timeout', 90);
@@ -59,6 +62,8 @@ Quy tắc chung:
 - Chỉ xuất JSON, không có markdown code fence, không có giải thích thêm
 - la_dap_an: true cho đáp án ĐÚNG, false cho đáp án SAI
 - Nếu không có đáp án đúng rõ ràng, đặt la_dap_an=false cho tất cả và thêm ghi chú vào noi_dung
+- QUAN TRỌNG: giá trị "noi_dung" của câu hỏi KHÔNG được chứa số thứ tự đầu dòng (ví dụ: "41.", "3)", "2-"). Chỉ xuất nội dung thuần, không có số thứ tự.
+- QUAN TRỌNG: giá trị "noi_dung" của từng lựa chọn KHÔNG được chứa tiền tố chữ cái (ví dụ: "A.", "B)", "C."). Chỉ xuất nội dung đáp án thuần.
 
 ═══ TIÊU CHÍ PHÂN LOẠI ĐỘ KHÓ (do_kho) — áp dụng nghiêm túc ═══
 
@@ -101,8 +106,116 @@ PROMPT;
         return $this->parseJsonResponse($response, 'ocrTrichXuatCauHoi');
     }
 
+    /**
+     * Tiếp tục trích xuất các câu hỏi CÒN LẠI sau câu hỏi đã biết.
+     * Dùng khi PDF có quá nhiều câu khiến output bị cắt vì maxOutputTokens.
+     *
+     * @param  string  $base64Content   — File PDF dưới dạng base64
+     * @param  string  $mimeType        — MIME type (application/pdf, image/jpeg, ...)
+     * @param  string  $cauHoiCuoiCung  — Nội dung câu hỏi cuối cùng đã trích xuất được
+     * @return array   — Mảng các câu hỏi tiếp theo ([] nếu hết)
+     */
+    public function ocrTrichXuatTiepTheo(string $base64Content, string $mimeType, string $cauHoiCuoiCung): array
+    {
+        $prompt = <<<PROMPT
+Bạn là chuyên gia phân tích đề thi. Tài liệu được của lần trước đã trích xuất được một phần câu hỏi nhưng bị cắt gọa giữa chừng do giới hạn output.
+
+Câu hỏi TRE NHAU nhất đã trích xuất được trong lần trước là:
+---
+{$cauHoiCuoiCung}
+---
+
+Nhiệm vụ của bạn: Hãy tìm vị trí câu hỏi trên trong tài liệu, rồi trích xuất TẤT CẢ các câu hỏi trắc nghiệm ĐỦNG SAU nó (đến hết tài liệu).
+
+YEU CẦU QUAN TRỌNG:
+- Nếu không còn câu hỏi nào sau câu trên, trả về mảng rỗng: []
+- TUYỆT ĐỐI không xuất lại câu hỏi đã biết ở trên
+
+Yêu cầu output là JSON array CHÍNH XÁC theo cấu trúc sau (không có text nào khác ngoài JSON):
+[
+  {
+    "noi_dung": "Nội dung câu hỏi đầy đủ",
+    "lua_chon": [
+      {"noi_dung": "Đáp án A", "la_dap_an": false},
+      {"noi_dung": "Đáp án B", "la_dap_an": true},
+      {"noi_dung": "Đáp án C", "la_dap_an": false},
+      {"noi_dung": "Đáp án D", "la_dap_an": false}
+    ],
+    "do_kho": "de|trung_binh|kho",
+    "giai_thich": "Giải thích ngắn tại sao đáp án đúng",
+    "chuong_goi_y": "Tên chủ đề/chương liên quan"
+  }
+]
+
+Quy tắc chung:
+- Chỉ xuất JSON, không có markdown code fence, không có giải thích thêm
+- la_dap_an: true cho đáp án ĐÚNG, false cho đáp án SAI
+- Nếu không có đáp án đúng rõ ràng, đặt la_dap_an=false cho tất cả và thêm ghi chú vào noi_dung
+- QUAN TRỌNG: giá trị "noi_dung" của câu hỏi KHÔNG được chứa số thứ tự đầu dòng. Chỉ xuất nội dung thuần.
+- QUAN TRỌNG: giá trị "noi_dung" của từng lựa chọn KHÔNG được chứa tiền tố chữ cái. Chỉ xuất nội dung đáp án thuần.
+- do_kho: "de" (cơ bản/nhớ), "trung_binh" (hiểu/vận dụng), "kho" (phân tích/suy luận)
+PROMPT;
+
+        $response = $this->guiYeuCauVision($prompt, $base64Content, $mimeType);
+        return $this->parseJsonResponse($response, 'ocrTrichXuatTiepTheo');
+    }
+
     // ===================================================================
-    // 2. Explainable AI: Giải thích câu trả lời sai
+    // 2. Generate: Tự soạn câu hỏi từ nội dung tài liệu
+    // ===================================================================
+
+    /**
+     * Đọc tài liệu và tự động soạn ra N câu hỏi trắc nghiệm dựa trên nội dung đó.
+     *
+     * @param  string  $base64Content   — File PDF/Ảnh dưới dạng base64
+     * @param  string  $mimeType        — MIME type (application/pdf, image/jpeg, ...)
+     * @param  int     $soLuongDe       — Số lượng câu hỏi Dễ (Nhận biết)
+     * @param  int     $soLuongTrungBinh— Số lượng câu hỏi Trung bình (Hiểu)
+     * @param  int     $soLuongKho      — Số lượng câu hỏi Khó (Vận dụng)
+     * @return array   — Mảng các câu hỏi được tạo
+     */
+    public function taoCauHoiTuTaiLieu(string $base64Content, string $mimeType, int $soLuongDe = 4, int $soLuongTrungBinh = 4, int $soLuongKho = 2): array
+    {
+        $soLuong = $soLuongDe + $soLuongTrungBinh + $soLuongKho;
+        
+        $prompt = <<<PROMPT
+Bạn là chuyên gia giáo dục và người ra đề thi xuất sắc. Nhiệm vụ của bạn là đọc nội dung của tài liệu được cung cấp và TỰ ĐỘNG SOẠN RA đúng {$soLuong} câu hỏi trắc nghiệm khách quan dựa trên kiến thức cốt lõi trong tài liệu đó.
+
+KHÔNG PHẢI là trích xuất câu hỏi có sẵn, mà là TỰ TẠO RA CÂU HỎI MỚI dựa trên thông tin lý thuyết/dữ liệu của tài liệu.
+
+Yêu cầu output là JSON array CHÍNH XÁC theo cấu trúc sau (không có text nào khác ngoài JSON):
+[
+  {
+    "noi_dung": "Nội dung câu hỏi đầy đủ, rõ ràng",
+    "lua_chon": [
+      {"noi_dung": "Đáp án A", "la_dap_an": false},
+      {"noi_dung": "Đáp án B", "la_dap_an": true},
+      {"noi_dung": "Đáp án C", "la_dap_an": false},
+      {"noi_dung": "Đáp án D", "la_dap_an": false}
+    ],
+    "do_kho": "de|trung_binh|kho",
+    "giai_thich": "Giải thích ngắn tại sao đáp án đúng dựa vào tài liệu",
+    "chuong_goi_y": "Tên chủ đề/chương liên quan"
+  }
+]
+
+Quy tắc:
+- Chỉ xuất JSON, không có markdown code fence.
+- Mỗi câu hỏi BẮT BUỘC có đúng 4 lựa chọn, trong đó có ĐÚNG 1 đáp án đúng (la_dap_an: true).
+- Phân bổ độ khó YÊU CẦU BẮT BUỘC như sau:
+  + ĐÚNG {$soLuongDe} câu có do_kho là "de" (Nhận biết: Hỏi thẳng định nghĩa, khái niệm)
+  + ĐÚNG {$soLuongTrungBinh} câu có do_kho là "trung_binh" (Hiểu: Yêu cầu hiểu bản chất, có bẫy nhẹ)
+  + ĐÚNG {$soLuongKho} câu có do_kho là "kho" (Vận dụng/Phân tích: Yêu cầu suy luận, kết hợp nhiều kiến thức)
+- Các đáp án sai (distractors) phải hợp lý và dễ nhầm lẫn.
+- Giải thích phải mạch lạc, giúp học sinh hiểu tại sao đáp án đó đúng.
+PROMPT;
+
+        $response = $this->guiYeuCauVision($prompt, $base64Content, $mimeType);
+        return $this->parseJsonResponse($response, 'taoCauHoiTuTaiLieu');
+    }
+
+    // ===================================================================
+    // 3. Explainable AI: Giải thích câu trả lời sai
     // ===================================================================
 
     /**
@@ -323,15 +436,22 @@ PROMPT;
 
         // Lớp 2: Nếu lỗi và output trông giống mảng bị cắt — thử “vá” lại
         if ((json_last_error() !== JSON_ERROR_NONE || !is_array($data)) && str_starts_with($clean, '[')) {
-            // Tìm vị trí ”}“ cuối cùng để cắt bỏ phần incomplete
-            $lastClose = strrpos($clean, '}');
-            if ($lastClose !== false) {
-                $salvaged = substr($clean, 0, $lastClose + 1) . ']';
-                $data     = json_decode($salvaged, true);
-                if (json_last_error() === JSON_ERROR_NONE && is_array($data)) {
-                    Log::warning("[GeminiAIService:{$context}] JSON bị cắt (maxOutputTokens?), đã vá thành công: " . count($data) . " câu hỏi");
-                    return $data;
+            $salvaged = $clean;
+            // Cắt lùi dần từ cuối chuỗi để tìm điểm } gần nhất tạo thành JSON hợp lệ
+            while (strlen($salvaged) > 10) {
+                $lastClose = strrpos($salvaged, '}');
+                if ($lastClose === false) break;
+
+                $salvaged = substr($salvaged, 0, $lastClose + 1);
+                $testData = json_decode($salvaged . ']', true);
+
+                if (json_last_error() === JSON_ERROR_NONE && is_array($testData)) {
+                    Log::warning("[GeminiAIService:{$context}] JSON bị cắt (maxOutputTokens?), đã vá bằng thuật toán lùi: " . count($testData) . " câu hỏi");
+                    return $testData;
                 }
+
+                // Nếu vá không thành công, bỏ qua dấu } này và tìm dấu } tiếp theo ở phía trước
+                $salvaged = substr($salvaged, 0, -1);
             }
         }
 

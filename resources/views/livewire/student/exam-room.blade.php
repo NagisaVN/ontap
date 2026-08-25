@@ -1,6 +1,6 @@
 {{-- ExamRoom view: KHÔNG wrap <x-layouts.exam> vì #[Layout] trên class đã handle --}}
 {{-- Layout (layouts/exam.blade.php) inject content này vào $slot --}}
-
+<div>
 {{-- ══ EXAM HEADER ══ --}}
 <header class="exam-header">
     <div class="exam-logo">🧠 SmartPrep</div>
@@ -58,7 +58,7 @@
     {{-- LEFT: Question Panel --}}
     <div class="space-y-4">
 
-        <div wire:loading class="sp-card p-8 text-center">
+        <div wire:loading wire:target="cauTruoc, cauTiep, denCau, nopBai" class="sp-card p-8 text-center w-full">
             <div class="sp-skeleton h-6 w-3/4 mx-auto mb-3" style="height:24px;border-radius:4px"></div>
             <div class="sp-skeleton h-4 w-1/2 mx-auto" style="height:16px;border-radius:4px"></div>
         </div>
@@ -66,7 +66,8 @@
         @if(!empty($cauHoiList))
         @php $cq = $cauHoiList[$cauHienTai]; $keys = ['A','B','C','D','E']; @endphp
 
-        <div class="sp-card p-5 animate-fade-in" wire:key="cau-{{ $cauHienTai }}">
+        <div wire:loading.remove wire:target="cauTruoc, cauTiep, denCau, nopBai" class="w-full">
+            <div class="sp-card p-5 animate-fade-in" wire:key="cau-{{ $cauHienTai }}">
             <div class="flex items-center justify-between mb-3">
                 <span class="text-xs font-semibold" style="color:var(--sp-text-muted)">
                     Câu {{ $cauHienTai + 1 }} / {{ count($cauHoiList) }}
@@ -105,6 +106,7 @@
             <button wire:click="cauTiep" class="sp-btn sp-btn-primary"
                     @disabled($cauHienTai === count($cauHoiList) - 1)>Câu tiếp →</button>
         </div>
+        </div>
         @endif
     </div>
 
@@ -140,6 +142,7 @@
         </div>
     </div>
 
+</div>
 </div>
 
 @push('scripts')

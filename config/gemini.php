@@ -14,13 +14,11 @@ return [
     'api_key'  => env('GEMINI_API_KEY', ''),
 
     /*
-     | Các model hiện đang hoạt động (2025):
-     |  - gemini-2.0-flash          (khuyến nghị — nhanh, miễn phí)
-     |  - gemini-2.5-flash          (mới nhất)
-     |  - gemini-1.5-flash-latest   (phiên bản 1.5 ổn định nhất)
-     |  - gemini-1.5-pro-latest     (chính xác hơn, chậm hơn)
+     | Các model hiện đang hoạt động (2026):
+     |  - gemini-3.6-flash          (khuyến nghị — nhanh, mạnh, bản mới nhất)
+     |  - gemini-3.5-pro            (chính xác hơn cho logic phức tạp)
      */
-    'model'    => env('GEMINI_MODEL', 'gemini-3-flash-preview'),
+    'model'    => env('GEMINI_MODEL', 'gemini-3.6-flash'),
 
     /*
      | API Version: 'v1' (stable) hoặc 'v1beta' (có tính năng thử nghiệm)
@@ -33,10 +31,10 @@ return [
     // Timeout HTTP (giây) — 180s để xử lý PDF lớn nhiều câu hỏi
     'timeout'  => (int) env('GEMINI_TIMEOUT', 180),
 
-    // Retry khi bị rate-limit (429)
+    // Retry khi bị lỗi tạm thời (HTTP client retry)
     'retry' => [
-        'times' => 3,
-        'sleep' => 2000, // milliseconds
+        'times' => 1,
+        'sleep' => 1000, // Thất bại nhanh để Job có thể xử lý release/delay thay vì block Worker
     ],
 
     // Safety settings — tắt filter để tránh block câu hỏi học thuật
