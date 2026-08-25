@@ -22,14 +22,26 @@ class OcrUpload extends Component
     #[Validate('required|file|mimes:pdf,jpg,jpeg,png,webp|max:10240')]
     public $file = null;
 
-    #[Validate('required|exists:chuong,id')]
+    #[Validate('required|integer|min:1|exists:chuong,id')]
     public int $chuongId = 0;
 
     public bool   $uploading  = false;
     public bool   $dispatched = false;
     public string $message    = '';
 
-    public function upload(): void
+    protected function messages(): array
+    {
+        return [
+            'file.required'     => 'Vui lòng chọn file tài liệu.',
+            'file.mimes'        => 'File phải là PDF, JPG, PNG hoặc WEBP.',
+            'file.max'          => 'File không được vượt quá 10MB.',
+            'chuongId.required' => 'Vui lòng chọn chương đích.',
+            'chuongId.min'      => 'Vui lòng chọn chương đích.',
+            'chuongId.exists'   => 'Chương được chọn không hợp lệ.',
+        ];
+    }
+
+    public function guiChoAI(): void
     {
         try {
             $this->validate();

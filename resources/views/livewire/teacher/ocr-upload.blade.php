@@ -29,6 +29,17 @@
     {{-- Upload form --}}
     <div class="sp-card p-6 space-y-5">
 
+        {{-- Validation summary --}}
+        @if($errors->any())
+        <div class="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+            <p class="font-semibold mb-1">❌ Vui lòng kiểm tra lại:</p>
+            <ul class="list-disc list-inside space-y-0.5 text-xs">
+                @foreach($errors->all() as $error)
+                    <li>{{ $error }}</li>
+                @endforeach
+            </ul>
+        </div>
+        @endif
         {{-- Dropzone --}}
         <div>
             <label class="sp-label">File tài liệu *</label>
@@ -69,7 +80,9 @@
                     </div>
                 @endif
             </div>
-            @error('file') <p class="text-xs text-red-500 mt-1">{{ $message }}</p> @enderror
+            @error('file')
+                <span class="text-red-500 text-sm mt-1 block italic">* {{ $message }}</span>
+            @enderror
             <div wire:loading wire:target="file" class="text-xs mt-2" style="color:var(--sp-primary);display:none">
                 ⏳ Đang upload...
             </div>
@@ -88,7 +101,9 @@
                     </optgroup>
                 @endforeach
             </select>
-            @error('chuongId') <p class="text-xs text-red-500 mt-1">{{ $message }}</p> @enderror
+            @error('chuongId')
+                <span class="text-red-500 text-sm mt-1 block italic">* {{ $message }}</span>
+            @enderror
         </div>
 
         {{-- Info box --}}
@@ -101,19 +116,19 @@
             </ul>
         </div>
 
-        <button wire:click="upload"
+        <button wire:click="guiChoAI"
                 wire:loading.attr="disabled"
                 wire:loading.class="opacity-75 cursor-not-allowed"
-                wire:target="upload"
+                wire:target="guiChoAI"
                 class="sp-btn sp-btn-primary w-full justify-center py-3 text-base font-semibold">
 
             {{-- Default state --}}
-            <span wire:loading.remove wire:target="upload" class="flex items-center gap-2">
+            <span wire:loading.remove wire:target="guiChoAI" class="flex items-center gap-2">
                 🤖 Gửi cho AI xử lý
             </span>
 
             {{-- Loading state --}}
-            <span wire:loading wire:target="upload" class="flex items-center gap-2" style="display:none">
+            <span wire:loading wire:target="guiChoAI" class="flex flex-col items-center gap-1 w-full" style="display:none">
                 <svg class="w-5 h-5 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                           d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
