@@ -27,6 +27,8 @@ RUN composer install --no-dev --optimize-autoloader
 
 RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
 
+RUN php artisan migrate --force
+
 RUN sed -i 's|DocumentRoot /var/www/html|DocumentRoot /var/www/html/public|' \
     /etc/apache2/sites-available/000-default.conf
 
@@ -35,4 +37,4 @@ RUN sed -i 's|<Directory /var/www/>|<Directory /var/www/html/public>|' \
 
 EXPOSE 80
 
-CMD ["apache2-foreground"]
+CMD ["apache2-foreground"]
