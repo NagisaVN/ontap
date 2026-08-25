@@ -135,7 +135,7 @@
         </div>
 
         <div class="sp-card px-4 py-3 flex items-center gap-2 text-xs" style="color:var(--sp-text-muted)">
-            <span wire:loading wire:target="tuDongLuu">⏳ Đang lưu...</span>
+            <span wire:loading wire:target="tuDongLuu" style="display:none">⏳ Đang lưu...</span>
             <span wire:loading.remove wire:target="tuDongLuu">💾 Tự động lưu mỗi 30s</span>
         </div>
     </div>
