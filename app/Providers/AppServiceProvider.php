@@ -35,6 +35,8 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        //
+        \Illuminate\Support\Facades\Gate::define('admin', fn($user) => $user->hasRole('super_admin'));
+        \Illuminate\Support\Facades\Gate::define('teacher', fn($user) => $user->hasRole('super_admin') || $user->hasRole('teacher'));
+        \Illuminate\Support\Facades\Gate::define('student', fn($user) => $user->hasRole('student'));
     }
 }

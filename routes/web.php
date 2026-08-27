@@ -34,7 +34,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     // Teacher routes
     Route::prefix('giao-vien')
-        ->middleware('role:teacher|super_admin')
+        ->middleware('can:teacher')
         ->group(function () {
             Route::get('/', Teacher\Dashboard::class)->name('teacher.dashboard');
             Route::get('/cau-hoi', Teacher\QuestionManager::class)->name('teacher.questions');
@@ -44,9 +44,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     // Admin routes
     Route::prefix('quan-tri')
-        ->middleware('role:super_admin')
+        ->middleware('can:admin')
         ->group(function () {
             Route::get('/', Admin\Dashboard::class)->name('admin.dashboard');
+            Route::get('/cau-truc', Admin\AdminTaxonomyManager::class)->name('admin.taxonomy');
         });
 });
 

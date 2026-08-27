@@ -19,7 +19,7 @@ class ProcessAIQuestionExtractionJob implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    public int $tries   = 1;    // PDF lớn có thể mất nhiều phút; retry sẽ chỉ lãng phí thời gian
+    public int $tries   = 20;    // PDF lớn có thể bị rate limit 429 nhiều lần
     public int $timeout = 600; // 10 phút tối đa — cho phép tối đa ~5-6 lần gọi API liên tiếp
 
     /**
@@ -71,9 +71,25 @@ class ProcessAIQuestionExtractionJob implements ShouldQueue
                     'file'            => $e->getFile(),
                     'line'            => $e->getLine(),
                 ]);
-                // Nếu batch đầu tiên lỗi — throw để job thất bại hoàn toàn
-                // Nếu batch >= 2 lỗi — dừng vòng lặp, lưu những gì đã có
-                if ($batch === 1) throw $e;
+
+                // Xử lý lỗi Rate Limit (429)
+                $errorMsg = $e->getMessage();
+                if (str_contains($errorMsg, '429') || str_contains($errorMsg, 'Too Many Requests') || str_contains($errorMsg, 'quota')) {
+                    $delay = 60;
+                    if (preg_match('/Please retry in ([\d\.]+)s/', $errorMsg, $matches)) {
+                        $delay = (int) ceil((float) $matches[1]) + 5; // Cộng thêm 5s cho an toàn
+                    }
+                    Log::warning("[ProcessAIQuestionExtractionJob] API quá tải, ngủ {$delay} giây rồi thử lại batch #{$batch}...");
+                    sleep($delay);
+                    $batch--; // Lùi lại 1 bước để vòng for lặp lại batch này
+                    continue; 
+                }
+
+                // Nếu batch đầu tiên lỗi (không phải 429) — throw để job thất bại hoàn toàn
+                if ($batch === 1) {
+                    throw $e;
+                }
+                
                 Log::warning("[ProcessAIQuestionExtractionJob] Dừng chunked extraction sớm ở batch #{$batch} do lỗi. Đã có " . count($danhSachCauHoi) . " câu.");
                 break;
             }

@@ -49,7 +49,7 @@
 
             @auth
                 {{-- Student nav --}}
-                @if(auth()->user()->hasRole('student'))
+                @can('student')
                     <span class="sp-nav-section-label">Học tập</span>
 
                     <a href="{{ route('dashboard') }}" wire:navigate
@@ -78,10 +78,10 @@
                         </svg>
                         Ôn điểm yếu
                     </a>
-                @endif
+                @endcan
 
                 {{-- Teacher nav --}}
-                @if(auth()->user()->hasAnyRole(['teacher','super_admin']))
+                @can('teacher')
                     <span class="sp-nav-section-label">Quản lý</span>
 
                     <a href="{{ route('teacher.dashboard') }}" wire:navigate
@@ -114,14 +114,14 @@
                             <span class="sp-nav-badge">{{ $choDuyet }}</span>
                         @endif
                     </a>
-                @endif
+                @endcan
 
                 {{-- Admin nav --}}
-                @if(auth()->user()->hasRole('super_admin'))
+                @can('admin')
                     <span class="sp-nav-section-label">Admin</span>
 
                     <a href="{{ route('admin.dashboard') }}" wire:navigate
-                       class="sp-nav-item {{ request()->routeIs('admin.*') ? 'active' : '' }}">
+                       class="sp-nav-item {{ request()->routeIs('admin.dashboard') ? 'active' : '' }}">
                         <svg class="sp-nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                   d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
@@ -129,7 +129,15 @@
                         </svg>
                         Quản trị hệ thống
                     </a>
-                @endif
+                    
+                    <a href="{{ route('admin.taxonomy') }}" wire:navigate
+                       class="sp-nav-item {{ request()->routeIs('admin.taxonomy') ? 'active' : '' }}">
+                        <svg class="sp-nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 14v3m4-3v3m4-3v3M3 21h18M3 10h18M3 7l9-4 9 4M4 10h16v11H4V10z" />
+                        </svg>
+                        Cấu trúc Đào tạo
+                    </a>
+                @endcan
             @endauth
 
         </nav>
