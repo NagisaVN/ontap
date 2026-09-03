@@ -48,6 +48,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ->group(function () {
             Route::get('/', Admin\Dashboard::class)->name('admin.dashboard');
             Route::get('/cau-truc', Admin\AdminTaxonomyManager::class)->name('admin.taxonomy');
+            Route::get('/nguoi-dung', Admin\UserManagement::class)->name('admin.users');
         });
 });
 

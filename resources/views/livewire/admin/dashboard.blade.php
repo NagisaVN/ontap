@@ -26,57 +26,49 @@
     </div>
     @endif
 
-    {{-- User table --}}
-    <div class="sp-card overflow-hidden">
-        <div class="px-5 py-4 border-b font-bold" style="border-color:var(--sp-border)">👥 Quản lý người dùng</div>
-        <table class="sp-table">
-            <thead>
-                <tr>
-                    <th>Người dùng</th>
-                    <th>Email</th>
-                    <th>Role hiện tại</th>
-                    <th>Đổi role</th>
-                    <th>Ngày tạo</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach($users as $user)
-                <tr wire:key="user-{{ $user->id }}">
-                    <td>
-                        <div class="flex items-center gap-2">
-                            <div class="sp-avatar" style="width:32px;height:32px;font-size:0.75rem">
-                                {{ strtoupper(substr($user->name, 0, 2)) }}
-                            </div>
-                            <span class="font-medium text-sm">{{ $user->name }}</span>
-                        </div>
-                    </td>
-                    <td class="text-sm" style="color:var(--sp-text-muted)">{{ $user->email }}</td>
-                    <td>
-                        @php $role = $user->roles->first()?->name ?? 'none'; @endphp
-                        <span class="sp-badge {{ $role === 'super_admin' ? 'sp-badge-red' : ($role === 'teacher' ? 'sp-badge-indigo' : 'sp-badge-gray') }}">
-                            {{ $role }}
-                        </span>
-                    </td>
-                    <td>
-                        @if($user->id !== auth()->id())
-                        <select wire:change="assignRole({{ $user->id }}, $event.target.value)"
-                                class="sp-input sp-select text-xs" style="width:auto;padding:0.25rem 0.5rem">
-                            <option value="">-- Đổi role --</option>
-                            <option value="student">student</option>
-                            <option value="teacher">teacher</option>
-                            <option value="super_admin">super_admin</option>
-                        </select>
-                        @else
-                            <span class="text-xs" style="color:var(--sp-text-muted)">Admin hiện tại</span>
-                        @endif
-                    </td>
-                    <td class="text-xs" style="color:var(--sp-text-muted)">
-                        {{ $user->created_at?->format('d/m/Y') }}
-                    </td>
-                </tr>
-                @endforeach
-            </tbody>
-        </table>
+    {{-- Quick Actions Grid --}}
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+
+        {{-- Card: Quản lý người dùng --}}
+        <a href="{{ route('admin.users') }}"
+           class="sp-card flex items-center gap-4 px-5 py-4 hover:border-indigo-300 transition-colors group"
+           style="border: 1.5px solid var(--sp-border); text-decoration: none;">
+            <div class="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 text-2xl"
+                 style="background:#eef2ff;">
+                👥
+            </div>
+            <div class="flex-1 min-w-0">
+                <div class="font-semibold text-sm" style="color:#1e293b;">Quản lý người dùng</div>
+                <div class="text-xs mt-0.5" style="color:var(--sp-text-muted)">
+                    Sửa thông tin, đổi role, khóa/mở tài khoản
+                </div>
+            </div>
+            <svg class="w-4 h-4 flex-shrink-0 opacity-40 group-hover:opacity-100 group-hover:translate-x-1 transition-all"
+                 style="color:#6366f1;" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
+            </svg>
+        </a>
+
+        {{-- Card: Cấu trúc đào tạo --}}
+        <a href="{{ route('admin.taxonomy') }}"
+           class="sp-card flex items-center gap-4 px-5 py-4 hover:border-violet-300 transition-colors group"
+           style="border: 1.5px solid var(--sp-border); text-decoration: none;">
+            <div class="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 text-2xl"
+                 style="background:#ede9fe;">
+                🏗️
+            </div>
+            <div class="flex-1 min-w-0">
+                <div class="font-semibold text-sm" style="color:#1e293b;">Cấu trúc đào tạo</div>
+                <div class="text-xs mt-0.5" style="color:var(--sp-text-muted)">
+                    Quản lý ngành, môn học, chuyên đề
+                </div>
+            </div>
+            <svg class="w-4 h-4 flex-shrink-0 opacity-40 group-hover:opacity-100 group-hover:translate-x-1 transition-all"
+                 style="color:#8b5cf6;" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
+            </svg>
+        </a>
+
     </div>
 
 </div>
