@@ -13,6 +13,9 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        // ── Cấu hình tin tưởng load balancer của Render để nhận đúng HTTPS ──
+        $middleware->trustProxies(at: '*');
+
         // Spatie Laravel Permission middleware aliases (Laravel 11 requires explicit registration)
         $middleware->alias([
             'role'                => \Spatie\Permission\Middleware\RoleMiddleware::class,
