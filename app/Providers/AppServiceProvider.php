@@ -38,5 +38,10 @@ class AppServiceProvider extends ServiceProvider
         \Illuminate\Support\Facades\Gate::define('admin', fn($user) => $user->hasRole('super_admin'));
         \Illuminate\Support\Facades\Gate::define('teacher', fn($user) => $user->hasRole('super_admin') || $user->hasRole('teacher'));
         \Illuminate\Support\Facades\Gate::define('student', fn($user) => $user->hasRole('student'));
+
+        // Default pagination views
+        \Illuminate\Pagination\LengthAwarePaginator::defaultView('vendor.pagination.tailwind');
+        \Illuminate\Pagination\LengthAwarePaginator::defaultSimpleView('vendor.pagination.simple-tailwind');
+
     }
 }

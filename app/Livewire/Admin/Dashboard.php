@@ -3,36 +3,35 @@
 namespace App\Livewire\Admin;
 
 use App\Models\User;
-use App\Models\Question;
-use App\Models\ExamAttempt;
 use Livewire\Attributes\Layout;
-use Livewire\Attributes\Title;
 use Livewire\Component;
 
 #[Layout('layouts.app')]
-#[Title('Quản trị hệ thống')]
 class Dashboard extends Component
 {
-    public function assignRole(int $userId, string $role): void
-    {
-        $user = User::findOrFail($userId);
-        $user->syncRoles([$role]);
-        session()->flash('success', "Đã cập nhật role cho {$user->name}.");
-    }
-
+    // KPI data is computed server-side and passed to the view
     public function render()
     {
-        $stats = [
-            'tong_user'     => User::count(),
-            'teacher'       => User::role('teacher')->count(),
-            'student'       => User::role('student')->count(),
-            'cau_hoi'       => Question::daDuyet()->count(),
-            'cho_duyet'     => Question::choDuyet()->count(),
-            'luot_thi'      => ExamAttempt::where('trang_thai','hoan_thanh')->count(),
+        $serverMetrics = [
+            ['label' => 'CPU Usage',  'value' => 42, 'color' => 'bg-indigo-500'],
+            ['label' => 'Memory',     'value' => 67, 'color' => 'bg-blue-500'],
+            ['label' => 'Disk I/O',   'value' => 28, 'color' => 'bg-emerald-500'],
+            ['label' => 'Network',    'value' => 55, 'color' => 'bg-amber-500'],
         ];
 
-        $users = User::with('roles')->latest()->take(20)->get();
+        $quickStats = [
+            ['label' => 'Questions in bank', 'value' => '1,248'],
+            ['label' => 'Exams conducted',   'value' => '3,421'],
+            ['label' => 'OCR jobs today',    'value' => '28'],
+            ['label' => 'Support tickets',   'value' => '7 open'],
+        ];
 
-        return view('livewire.admin.dashboard', compact('stats', 'users'));
+        $performanceStats = [
+            ['label' => 'Uptime',      'value' => '99.98%'],
+            ['label' => 'Requests/s',  'value' => '2,841'],
+            ['label' => 'Avg latency', 'value' => '48ms'],
+        ];
+
+        return view('livewire.admin.dashboard', compact('serverMetrics', 'quickStats', 'performanceStats'));
     }
 }

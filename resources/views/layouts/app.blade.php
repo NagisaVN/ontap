@@ -17,6 +17,9 @@
     <!-- ApexCharts -->
     <script src="https://cdn.jsdelivr.net/npm/apexcharts@3.45.2/dist/apexcharts.min.js" defer></script>
 
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
     @stack('head')
 </head>
 <body class="antialiased font-sans text-slate-900 transition-colors duration-300" :class="dark ? 'bg-slate-900 text-slate-100' : 'bg-slate-50'">
@@ -51,11 +54,11 @@
                     @can('student')
                         <div x-show="!collapsed" style="display: none;" class="px-2 mt-4 mb-2 text-xs font-bold uppercase tracking-wider" :class="dark ? 'text-slate-500' : 'text-slate-400'">Học tập</div>
                         
-                        <a href="{{ route('dashboard') }}" wire:navigate :title="collapsed ? 'Dashboard' : null"
+                        <a href="{{ route('dashboard') }}" wire:navigate :title="collapsed ? 'Tổng quan' : null"
                            class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold transition-colors"
                            :class="[collapsed ? 'justify-center' : '', dark ? '{{ request()->routeIs('dashboard') ? 'bg-indigo-500/10 text-indigo-400' : 'text-slate-400 hover:bg-slate-700/50 hover:text-slate-200' }}' : '{{ request()->routeIs('dashboard') ? 'bg-indigo-50 text-indigo-700' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900' }}']">
                             <span class="shrink-0"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg></span>
-                            <span x-show="!collapsed" style="display: none;" class="truncate">Dashboard</span>
+                            <span x-show="!collapsed" style="display: none;" class="truncate">Tổng quan</span>
                         </a>
 
                         <a href="{{ route('student.thi') }}" wire:navigate.hover :title="collapsed ? 'Làm bài thi' : null"
@@ -71,31 +74,92 @@
                             <span class="shrink-0"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg></span>
                             <span x-show="!collapsed" style="display: none;" class="truncate">Ôn điểm yếu</span>
                         </a>
+
+                        <a href="{{ route('student.history') }}" wire:navigate :title="collapsed ? 'Lịch sử' : null"
+                           class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold transition-colors mt-1"
+                           :class="[collapsed ? 'justify-center' : '', dark ? '{{ request()->routeIs('student.history') ? 'bg-indigo-500/10 text-indigo-400' : 'text-slate-400 hover:bg-slate-700/50 hover:text-slate-200' }}' : '{{ request()->routeIs('student.history') ? 'bg-indigo-50 text-indigo-700' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900' }}']">
+                            <span class="shrink-0">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 8v8m-4-5v5m-4-2v2M3 20h18"/>
+                                </svg>
+                            </span>
+                            <span x-show="!collapsed" style="display: none;" class="truncate">Lịch sử</span>
+                        </a>
                     @endcan
+
 
                     {{-- TEACHER SECTION --}}
                     @can('teacher')
                         <div x-show="!collapsed" style="display: none;" class="px-2 mt-6 mb-2 text-xs font-bold uppercase tracking-wider" :class="dark ? 'text-slate-500' : 'text-slate-400'">Quản lý GV</div>
-                        
+
+                        {{-- Dashboard --}}
                         <a href="{{ route('teacher.dashboard') }}" wire:navigate :title="collapsed ? 'Tổng quan GV' : null"
                            class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold transition-colors"
                            :class="[collapsed ? 'justify-center' : '', dark ? '{{ request()->routeIs('teacher.dashboard') ? 'bg-emerald-500/10 text-emerald-400' : 'text-slate-400 hover:bg-slate-700/50 hover:text-slate-200' }}' : '{{ request()->routeIs('teacher.dashboard') ? 'bg-emerald-50 text-emerald-700' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900' }}']">
-                            <span class="shrink-0"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 8v8m-4-5v5m-4-2v2m-2 4h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg></span>
-                            <span x-show="!collapsed" style="display: none;" class="truncate">Tổng quan GV</span>
+                            <span class="shrink-0">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1" stroke-width="2"/><rect x="14" y="3" width="7" height="7" rx="1" stroke-width="2"/><rect x="3" y="14" width="7" height="7" rx="1" stroke-width="2"/><rect x="14" y="14" width="7" height="7" rx="1" stroke-width="2"/></svg>
+                            </span>
+                            <span x-show="!collapsed" style="display: none;" class="truncate">Dashboard</span>
                         </a>
 
+                        {{-- Questions --}}
                         <a href="{{ route('teacher.questions') }}" wire:navigate :title="collapsed ? 'Câu hỏi' : null"
                            class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold transition-colors mt-1"
                            :class="[collapsed ? 'justify-center' : '', dark ? '{{ request()->routeIs('teacher.questions') ? 'bg-emerald-500/10 text-emerald-400' : 'text-slate-400 hover:bg-slate-700/50 hover:text-slate-200' }}' : '{{ request()->routeIs('teacher.questions') ? 'bg-emerald-50 text-emerald-700' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900' }}']">
-                            <span class="shrink-0"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg></span>
+                            <span class="shrink-0">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" stroke-width="2"/><path stroke-width="2" stroke-linecap="round" d="M9 9h.01M9 12h.01M9 15h.01M13 9h3M13 12h3M13 15h3"/></svg>
+                            </span>
                             <span x-show="!collapsed" style="display: none;" class="truncate">Câu hỏi</span>
                         </a>
 
+                        {{-- Add Question --}}
+                        <a href="{{ route('teacher.create-question') }}" wire:navigate :title="collapsed ? 'Thêm câu hỏi' : null"
+                           class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold transition-colors mt-1"
+                           :class="[collapsed ? 'justify-center' : '', dark ? '{{ request()->routeIs('teacher.create-question') ? 'bg-emerald-500/10 text-emerald-400' : 'text-slate-400 hover:bg-slate-700/50 hover:text-slate-200' }}' : '{{ request()->routeIs('teacher.create-question') ? 'bg-emerald-50 text-emerald-700' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900' }}']">
+                            <span class="shrink-0">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" stroke-width="2"/><path stroke-width="2" stroke-linecap="round" d="M12 8v8M8 12h8"/></svg>
+                            </span>
+                            <span x-show="!collapsed" style="display: none;" class="truncate">Thêm câu hỏi</span>
+                        </a>
+
+                        {{-- OCR Upload --}}
+                        <a href="{{ route('teacher.ocr') }}" wire:navigate :title="collapsed ? 'OCR Upload' : null"
+                           class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold transition-colors mt-1"
+                           :class="[collapsed ? 'justify-center' : '', dark ? '{{ request()->routeIs('teacher.ocr') ? 'bg-emerald-500/10 text-emerald-400' : 'text-slate-400 hover:bg-slate-700/50 hover:text-slate-200' }}' : '{{ request()->routeIs('teacher.ocr') ? 'bg-emerald-50 text-emerald-700' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900' }}']">
+                            <span class="shrink-0">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline stroke-width="2" stroke-linecap="round" stroke-linejoin="round" points="17 8 12 3 7 8"/><line stroke-width="2" stroke-linecap="round" x1="12" y1="3" x2="12" y2="15"/></svg>
+                            </span>
+                            <span x-show="!collapsed" style="display: none;" class="truncate">OCR Upload</span>
+                        </a>
+
+                        {{-- Exam Builder --}}
+                        <a href="{{ route('teacher.exam-builder') }}" wire:navigate :title="collapsed ? 'Tạo đề thi' : null"
+                           class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold transition-colors mt-1"
+                           :class="[collapsed ? 'justify-center' : '', dark ? '{{ request()->routeIs('teacher.exam-builder') ? 'bg-emerald-500/10 text-emerald-400' : 'text-slate-400 hover:bg-slate-700/50 hover:text-slate-200' }}' : '{{ request()->routeIs('teacher.exam-builder') ? 'bg-emerald-50 text-emerald-700' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900' }}']">
+                            <span class="shrink-0">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+                            </span>
+                            <span x-show="!collapsed" style="display: none;" class="truncate">Tạo đề thi</span>
+                        </a>
+
+                        {{-- Reports --}}
+                        <a href="{{ route('teacher.reports') }}" wire:navigate :title="collapsed ? 'Báo cáo' : null"
+                           class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold transition-colors mt-1"
+                           :class="[collapsed ? 'justify-center' : '', dark ? '{{ request()->routeIs('teacher.reports') ? 'bg-emerald-500/10 text-emerald-400' : 'text-slate-400 hover:bg-slate-700/50 hover:text-slate-200' }}' : '{{ request()->routeIs('teacher.reports') ? 'bg-emerald-50 text-emerald-700' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900' }}']">
+                            <span class="shrink-0">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline stroke-width="2" stroke-linecap="round" points="14 2 14 8 20 8"/><line stroke-width="2" stroke-linecap="round" x1="16" y1="13" x2="8" y2="13"/><line stroke-width="2" stroke-linecap="round" x1="16" y1="17" x2="8" y2="17"/><polyline stroke-width="2" stroke-linecap="round" points="10 9 9 9 8 9"/></svg>
+                            </span>
+                            <span x-show="!collapsed" style="display: none;" class="truncate">Báo cáo</span>
+                        </a>
+
+                        {{-- Chờ duyệt --}}
                         <a href="{{ route('teacher.pending') }}" wire:navigate :title="collapsed ? 'Chờ duyệt' : null"
                            class="flex items-center justify-between px-3 py-2.5 rounded-xl text-sm font-semibold transition-colors mt-1"
                            :class="[collapsed ? 'justify-center' : '', dark ? '{{ request()->routeIs('teacher.pending') ? 'bg-emerald-500/10 text-emerald-400' : 'text-slate-400 hover:bg-slate-700/50 hover:text-slate-200' }}' : '{{ request()->routeIs('teacher.pending') ? 'bg-emerald-50 text-emerald-700' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900' }}']">
                             <div class="flex items-center gap-3">
-                                <span class="shrink-0"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg></span>
+                                <span class="shrink-0">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                </span>
                                 <span x-show="!collapsed" style="display: none;" class="truncate">Chờ duyệt</span>
                             </div>
                             @php $choDuyet = \App\Models\Question::choDuyet()->count(); @endphp
@@ -104,6 +168,7 @@
                             @endif
                         </a>
                     @endcan
+
 
                     {{-- ADMIN SECTION --}}
                     @can('admin')
@@ -155,7 +220,7 @@
                     <button @click="collapsed = !collapsed" class="lg:hidden p-1.5 -ml-2 rounded-lg" :class="dark ? 'text-slate-400 hover:bg-slate-700' : 'text-slate-500 hover:bg-slate-100'">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
                     </button>
-                    <h1 class="font-bold text-lg" :class="dark ? 'text-white' : 'text-slate-800'">{{ $title ?? 'Dashboard' }}</h1>
+                    <h1 class="font-bold text-lg" :class="dark ? 'text-white' : 'text-slate-800'">{{ $title ?? 'Tổng quan' }}</h1>
                 </div>
                 
                 <div class="flex items-center gap-1.5 sm:gap-3">

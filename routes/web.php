@@ -1,54 +1,70 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use App\Livewire\Admin;
 use App\Livewire\Student;
 use App\Livewire\Teacher;
-use App\Livewire\Admin;
 
-// ── Redirect root ──────────────────────────────────────────
+// ── Root redirect ───────────────────────────────────────────
 Route::redirect('/', '/login');
 
-Route::view('profile', 'profile')
+// ── Profile ─────────────────────────────────────────────────
+Route::get('/profile', \App\Livewire\Profile::class)
     ->middleware(['auth'])
     ->name('profile');
 
-// ── Student ────────────────────────────────────────────────
+// ── Authenticated routes ─────────────────────────────────────
 Route::middleware(['auth', 'verified'])->group(function () {
 
-    // Dashboard (redirect by role)
+    // Smart dashboard redirect based on role
     Route::get('/dashboard', function () {
         $user = auth()->user();
-        if ($user->hasRole('super_admin') || $user->hasRole('teacher')) {
-            return redirect()->route('teacher.dashboard');
-        }
-        return app(Student\Dashboard::class)();
+
+        return match (true) {
+            $user->hasRole('super_admin') => redirect()->route('admin.dashboard'),
+            $user->hasRole('teacher')     => redirect()->route('teacher.dashboard'),
+            default                       => redirect()->route('student.dashboard'),
+        };
     })->name('dashboard');
 
-    // Student-only routes
-    Route::middleware('role:student|teacher|super_admin')->group(function () {
-        Route::get('/thi', Student\CreateExam::class)->name('student.thi');
-        Route::get('/thi/{baiThi}', Student\ExamRoom::class)->name('exam.room');
-        Route::get('/ket-qua/{luotThi}', Student\ExamResult::class)->name('exam.result');
-        Route::get('/on-tap', Student\SpacedRepetition::class)->name('student.on-tap');
-    });
-
-    // Teacher routes
-    Route::prefix('giao-vien')
-        ->middleware('can:teacher')
+    // ── Student ─────────────────────────────────────────────
+    Route::prefix('student')
+        ->middleware('role:student|super_admin')
         ->group(function () {
-            Route::get('/', Teacher\Dashboard::class)->name('teacher.dashboard');
-            Route::get('/cau-hoi', Teacher\QuestionManager::class)->name('teacher.questions');
-            Route::get('/cho-duyet', Teacher\PendingReview::class)->name('teacher.pending');
-            Route::get('/ocr-upload', Teacher\OcrUpload::class)->name('teacher.ocr');
+            Route::get('/',              Student\Dashboard::class)       ->name('student.dashboard');
+            Route::get('/history',       Student\History::class)          ->name('student.history');
+            Route::get('/on-tap',        Student\SpacedRepetition::class) ->name('student.on-tap');
+            Route::get('/leaderboard',   Student\Leaderboard::class)      ->name('student.leaderboard');
+
+            // Exam flow
+            Route::get('/thi',                    Student\CreateExam::class)  ->name('student.thi');
+            Route::get('/thi/{baiThi}',           Student\ExamRoom::class)    ->name('exam.room');
+            Route::get('/ket-qua/{luotThi}',      Student\ExamResult::class)  ->name('exam.result');
         });
 
-    // Admin routes
-    Route::prefix('quan-tri')
-        ->middleware('can:admin')
+    // ── Teacher ─────────────────────────────────────────────
+    Route::prefix('giao-vien')
+        ->middleware('role:teacher|super_admin')
         ->group(function () {
-            Route::get('/', Admin\Dashboard::class)->name('admin.dashboard');
-            Route::get('/cau-truc', Admin\AdminTaxonomyManager::class)->name('admin.taxonomy');
-            Route::get('/nguoi-dung', Admin\UserManagement::class)->name('admin.users');
+            Route::get('/',             Teacher\Dashboard::class)       ->name('teacher.dashboard');
+            Route::get('/cau-hoi',      Teacher\QuestionManager::class) ->name('teacher.questions');
+            Route::get('/tao-cau-hoi',  Teacher\QuestionCreator::class) ->name('teacher.create-question');
+            Route::get('/de-thi',       Teacher\ExamBuilder::class)     ->name('teacher.exam-builder');
+            Route::get('/bao-cao',      Teacher\Reports::class)          ->name('teacher.reports');
+
+            // Keep legacy routes pointing to existing classes
+            Route::get('/cho-duyet',   Teacher\PendingReview::class)    ->name('teacher.pending');
+            Route::get('/ocr-upload',  Teacher\OcrUpload::class)         ->name('teacher.ocr');
+        });
+
+    // ── Admin ───────────────────────────────────────────────
+    Route::prefix('quan-tri')
+        ->middleware('role:super_admin')
+        ->group(function () {
+            Route::get('/',           Admin\Dashboard::class)       ->name('admin.dashboard');
+            Route::get('/cau-truc',   Admin\TaxonomyManager::class) ->name('admin.taxonomy');
+            Route::get('/nguoi-dung', Admin\UserManagement::class)  ->name('admin.users');
+            Route::get('/audit',      Admin\AuditLogs::class)        ->name('admin.audit');
         });
 });
 

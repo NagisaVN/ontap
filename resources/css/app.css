@@ -43,6 +43,11 @@
 
 body { background-color: var(--sp-bg); color: var(--sp-text-primary); }
 
+/* Global fix: SVG inline baseline gap — makes all SVGs display as block
+   inside flex/grid containers so icons center perfectly */
+svg { display: block; }
+
+
 /* ============================================================
    Sidebar Layout
    ============================================================ */

@@ -1,234 +1,146 @@
-<div class="space-y-6">
+@php
+$intensityClass = function($v) {
+  if ($v === 0) return "bg-slate-100";
+  if ($v === 1) return "bg-indigo-100";
+  if ($v === 2) return "bg-indigo-300";
+  if ($v === 3) return "bg-indigo-500";
+  return "bg-indigo-700";
+};
+@endphp
+<div class="p-6 max-w-5xl mx-auto space-y-6">
+  <!-- Greeting banner -->
+  <div class="bg-gradient-to-r from-indigo-600 to-indigo-500 rounded-2xl p-6 flex items-center justify-between text-white shadow-sm">
+    <div>
+      <p class="text-indigo-200 text-sm font-medium">
+        {{ now()->format('l, j F Y') }}
+      </p>
+      <h1 class="text-2xl font-bold mt-0.5">
+        {{ now()->hour < 12 ? 'Chào buổi sáng' : (now()->hour < 18 ? 'Chào buổi chiều' : 'Chào buổi tối') }}, {{ auth()->user()->name }}! 👋
+      </h1>
+      <p class="text-indigo-100 text-sm mt-1">Hôm nay bạn có kế hoạch ôn tập chưa? Hãy duy trì chuỗi ngày học!</p>
+    </div>
+    <a
+      href="/student/exam/setup" wire:navigate
+      class="hidden sm:flex items-center gap-2 bg-white/20 hover:bg-white/30 transition-colors rounded-xl px-4 h-10 text-sm font-semibold text-white shrink-0"
+    >
+      Bắt đầu thi 
+      <!-- Icon: ArrowRight -->
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+    </a>
+  </div>
 
-    {{-- ── Stat Cards ── --}}
-    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        @php
-            $statCards = [
-                ['icon'=>'🎯','value'=>$tongQuan['tong_luot_thi'] ?? 0,'label'=>'Lượt thi','color'=>'#6366f1','bg'=>'#eef2ff'],
-                ['icon'=>'📊','value'=>number_format($tongQuan['diem_trung_binh'] ?? 0, 1),'label'=>'Điểm TB','color'=>'#10b981','bg'=>'#d1fae5'],
-                ['icon'=>'📚','value'=>$tongQuan['so_chuong_da_hoc'] ?? 0,'label'=>'Chương đã học','color'=>'#f59e0b','bg'=>'#fef3c7'],
-                ['icon'=>'⚠️','value'=>$tongQuan['so_cau_diem_yeu'] ?? 0,'label'=>'Điểm yếu','color'=>'#ef4444','bg'=>'#fee2e2'],
-            ];
-        @endphp
+  <!-- KPI cards -->
+  <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+    <x-kpi-card label="Tổng bài đã thi" value="47" delta="5 bài tuần này" :deltaPositive="true" color="indigo">
+        <x-slot:icon>
+            <!-- Icon: BookOpen -->
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+        </x-slot:icon>
+    </x-kpi-card>
+    <x-kpi-card label="Điểm trung bình" value="78.4%" delta="+2.3% so tuần trước" :deltaPositive="true" color="blue">
+        <x-slot:icon>
+            <!-- Icon: Target -->
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
+        </x-slot:icon>
+    </x-kpi-card>
+    <x-kpi-card label="Tỷ lệ chính xác" value="81%" delta="+1.2% so tuần trước" :deltaPositive="true" color="emerald">
+        <x-slot:icon>
+            <!-- Icon: Zap -->
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+        </x-slot:icon>
+    </x-kpi-card>
+  </div>
 
-        @foreach($statCards as $card)
-        <div class="sp-card sp-stat-card sp-stat-card-wrap">
-            <div class="sp-stat-icon" style="background:{{ $card['bg'] }}">
-                <span>{{ $card['icon'] }}</span>
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
+    <!-- Continue learning -->
+    <div class="lg:col-span-2 bg-white rounded-xl border border-slate-200 shadow-sm">
+      <div class="flex items-center justify-between px-5 pt-5 pb-3 border-b border-slate-100">
+        <h2 class="font-semibold text-slate-900">Tiếp tục ôn tập</h2>
+        <a href="{{ route('student.history') }}" wire:navigate class="text-xs font-medium text-indigo-600 hover:text-indigo-700 flex items-center gap-1">
+          Xem tất cả
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+        </a>
+      </div>
+      <div class="divide-y divide-slate-100">
+        @forelse($continueItems as $item)
+          <div class="px-5 py-4 flex items-center gap-4 hover:bg-slate-50/50 transition-colors">
+            <div class="w-10 h-10 rounded-xl bg-indigo-50 flex items-center justify-center shrink-0">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-indigo-600"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
             </div>
-            <div>
-                <div class="sp-stat-value" style="color:{{ $card['color'] }}">{{ $card['value'] }}</div>
-                <div class="sp-stat-label">{{ $card['label'] }}</div>
+            <div class="flex-1 min-w-0">
+              <p class="text-sm font-semibold text-slate-900 truncate">{{ $item['topic'] }}</p>
+              <p class="text-xs text-slate-500">{{ $item['subject'] }}
+                @if($item['started_at'])
+                  · {{ $item['started_at'] }}
+                @endif
+              </p>
+              <div class="mt-2 flex items-center gap-2">
+                <div class="flex-1 h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                  <div class="h-full bg-indigo-500 rounded-full transition-all" style="width: {{ $item['progress'] }}%"></div>
+                </div>
+                <span class="text-xs text-slate-500 shrink-0">{{ $item['questions'] }}/{{ $item['total'] }}</span>
+              </div>
             </div>
-        </div>
+            <a href="{{ route('exam.room', $item['bai_thi_id']) }}" wire:navigate
+               class="shrink-0 h-8 px-3 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-xs font-semibold text-indigo-700 transition-colors flex items-center gap-1.5">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+              Tiếp tục
+            </a>
+          </div>
+        @empty
+          <div class="px-5 py-12 flex flex-col items-center justify-center text-center">
+            <div class="w-14 h-14 rounded-full bg-slate-100 flex items-center justify-center mb-3">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="text-slate-300"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+            </div>
+            <p class="text-sm font-medium text-slate-500">Chưa có bài thi nào đang dở</p>
+            <p class="text-xs text-slate-400 mt-1 mb-4">Bắt đầu một bài thi mới để luyện tập</p>
+            <a href="{{ route('student.thi') }}" wire:navigate
+               class="inline-flex items-center gap-2 h-9 px-4 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-lg transition-colors">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              Tạo bài thi mới
+            </a>
+          </div>
+        @endforelse
+      </div>
+    </div>
+
+    <!-- Streak heatmap -->
+    <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-5">
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="font-semibold text-slate-900">Chuỗi ngày học</h2>
+        <span class="text-xs font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-full">🔥 14 ngày</span>
+      </div>
+
+      <!-- Day labels -->
+      <div class="grid grid-cols-7 gap-1 mb-1">
+        @foreach(['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN'] as $d)
+          <div class="text-center text-[10px] text-slate-400 font-medium">{{ substr($d, 0, 1) }}</div>
         @endforeach
-    </div>
+      </div>
 
-    {{-- ── Charts Row ── --}}
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
-
-        {{-- Radar Chart --}}
-        <div class="lg:col-span-2 sp-card p-5">
-            <div class="flex items-center justify-between mb-4">
-                <div>
-                    <h2 class="font-bold text-base" style="color:var(--sp-text-primary)">Bản đồ kiến thức</h2>
-                    <p class="text-xs mt-0.5" style="color:var(--sp-text-muted)">Mức độ thành thạo theo chương</p>
-                </div>
-                <select wire:model.live="selectedMonHocId"
-                        class="sp-input sp-select text-sm" style="width:auto">
-                    <option value="0">-- Chọn môn --</option>
-                    @foreach($monHocs as $m)
-                        <option value="{{ $m->id }}">{{ $m->ten }}</option>
-                    @endforeach
-                </select>
+      <!-- Grid -->
+      <div class="space-y-1">
+        @if(isset($streakData))
+          @foreach($streakData as $wi => $week)
+            <div class="grid grid-cols-7 gap-1">
+              @foreach($week as $di => $val)
+                <div
+                  title="W{{ $wi + 1 }} Day {{ $di + 1 }}: {{ $val * 10 }} mins"
+                  class="h-6 rounded-sm {{ $intensityClass($val) }} transition-colors"
+                ></div>
+              @endforeach
             </div>
+          @endforeach
+        @endif
+      </div>
 
-            @if(!empty($radarData['categories']))
-                <div id="radarChart" style="min-height:280px"></div>
-            @else
-                <div class="flex items-center justify-center h-48 text-sm"
-                     style="color:var(--sp-text-muted)">
-                    Chưa có dữ liệu — Hãy làm ít nhất 1 bài thi 🎯
-                </div>
-            @endif
-        </div>
-
-        {{-- Quick Actions --}}
-        <div class="sp-card p-5 flex flex-col gap-3">
-            <h2 class="font-bold text-base mb-1" style="color:var(--sp-text-primary)">Bắt đầu ngay</h2>
-
-            <a href="{{ route('student.thi') }}" wire:navigate.hover
-               class="sp-btn sp-btn-primary w-full justify-center py-3 text-sm font-semibold">
-                ⚡ Thi thử ngay
-            </a>
-
-            <a href="{{ route('student.on-tap') }}" wire:navigate
-               class="sp-btn w-full justify-center py-3 text-sm font-semibold"
-               style="background:#fef3c7;color:#92400e;border:none">
-                🔄 Ôn điểm yếu
-            </a>
-
-            <a href="{{ route('student.thi') }}?mode=kho" wire:navigate.hover
-               class="sp-btn sp-btn-outline w-full justify-center py-3 text-sm font-semibold">
-                🔥 Thử thách khó
-            </a>
-
-            {{-- Progress circular --}}
-            @if(isset($tongQuan['diem_trung_binh']))
-            <div class="mt-auto pt-4 border-t" style="border-color:var(--sp-border)">
-                <div class="text-xs font-medium mb-2" style="color:var(--sp-text-secondary)">Tiến độ tổng thể</div>
-                <div class="flex items-center gap-3">
-                    <div class="relative flex items-center justify-center w-14 h-14">
-                        <svg viewBox="0 0 36 36" class="w-14 h-14 -rotate-90">
-                            <circle cx="18" cy="18" r="15.9" fill="none" stroke="#e2e8f0" stroke-width="3"/>
-                            <circle cx="18" cy="18" r="15.9" fill="none" stroke="#6366f1" stroke-width="3"
-                                    stroke-dasharray="{{ min(100, ($tongQuan['diem_trung_binh'] / 10) * 100) }} 100"
-                                    stroke-linecap="round"/>
-                        </svg>
-                        <span class="absolute text-xs font-bold" style="color:var(--sp-primary)">
-                            {{ number_format($tongQuan['diem_trung_binh'] ?? 0, 0) }}
-                        </span>
-                    </div>
-                    <div>
-                        <div class="text-sm font-semibold">Điểm trung bình</div>
-                        <div class="text-xs" style="color:var(--sp-text-muted)">{{ $tongQuan['tong_luot_thi'] ?? 0 }} lượt thi</div>
-                    </div>
-                </div>
-            </div>
-            @endif
-        </div>
+      <div class="flex items-center justify-end gap-1.5 mt-3">
+        <span class="text-[10px] text-slate-400">Ít</span>
+        @foreach([0, 1, 2, 3, 4] as $v)
+          <div class="w-3 h-3 rounded-sm {{ $intensityClass($v) }}"></div>
+        @endforeach
+        <span class="text-[10px] text-slate-400">Nhiều</span>
+      </div>
     </div>
-
-    {{-- ── Mistake Heatmap ── --}}
-    @if($cauHoiSai->isNotEmpty())
-    <div class="sp-card p-5">
-        <div class="flex items-center justify-between mb-4">
-            <div>
-                <h2 class="font-bold text-base" style="color:var(--sp-text-primary)">Bản đồ lỗi sai</h2>
-                <p class="text-xs mt-0.5" style="color:var(--sp-text-muted)">Click vào ô để xem chi tiết câu hỏi</p>
-            </div>
-            <div class="flex items-center gap-2 text-xs" style="color:var(--sp-text-muted)">
-                <span>Ít sai</span>
-                <div class="flex gap-1">
-                    @foreach([0,1,2,3,4] as $l)
-                        <div class="w-4 h-4 heatmap-cell level-{{ $l }}"></div>
-                    @endforeach
-                </div>
-                <span>Nhiều sai</span>
-            </div>
-        </div>
-        <div class="flex flex-wrap gap-2">
-            @foreach($cauHoiSai as $stat)
-                @php
-                    $soLanSai = $stat['so_lan_sai'] ?? 0;
-                    $level = match(true) {
-                        $soLanSai >= 5 => 4,
-                        $soLanSai >= 3 => 3,
-                        $soLanSai >= 2 => 2,
-                        default => 1,
-                    };
-                @endphp
-                <div x-data="{ show: false }" class="relative">
-                    <div class="heatmap-cell level-{{ $level }} w-9 h-9 flex items-center justify-center
-                                text-xs font-bold cursor-pointer"
-                         @mouseenter="show=true" @mouseleave="show=false"
-                         title="{{ Str::limit($stat['noi_dung'] ?? 'Câu hỏi', 60) }}">
-                        {{ $soLanSai }}
-                    </div>
-                    <div x-show="show" x-transition
-                         class="absolute z-10 bottom-full left-1/2 -translate-x-1/2 mb-2 w-64 p-3
-                                bg-slate-800 text-white text-xs rounded-lg shadow-xl"
-                         style="display:none">
-                        <p class="font-medium mb-1">{{ Str::limit($stat['noi_dung'] ?? 'Câu hỏi', 80) }}</p>
-                        <p style="color:#94a3b8">Sai {{ $soLanSai }} lần • {{ $stat['chuong'] ?? '' }}</p>
-                    </div>
-                </div>
-            @endforeach
-        </div>
-    </div>
-    @endif
-
-    {{-- ── Recent Exams ── --}}
-    @if($luotThiGanDay->isNotEmpty())
-    <div class="sp-card overflow-hidden">
-        <div class="px-5 py-4 border-b flex items-center justify-between"
-             style="border-color:var(--sp-border)">
-            <h2 class="font-bold text-base" style="color:var(--sp-text-primary)">Lịch sử thi gần đây</h2>
-        </div>
-        <div class="overflow-x-auto">
-            <table class="sp-table">
-                <thead>
-                    <tr>
-                        <th>Tên bài thi</th>
-                        <th>Môn học</th>
-                        <th>Điểm</th>
-                        <th>Thời gian</th>
-                        <th>Kết quả</th>
-                        <th></th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach($luotThiGanDay as $lt)
-                    <tr>
-                        <td class="font-medium">{{ $lt->baiThi?->ten_bai_thi ?? 'Không rõ' }}</td>
-                        <td>
-                            <span class="sp-badge sp-badge-indigo">
-                                {{ $lt->baiThi?->monHoc?->ten ?? '?' }}
-                            </span>
-                        </td>
-                        <td>
-                            <span class="font-bold text-lg"
-                                  style="color: {{ $lt->diem_so >= 5 ? 'var(--sp-accent)' : 'var(--sp-danger)' }}">
-                                {{ number_format($lt->diem_so, 1) }}
-                            </span>
-                            <span class="text-xs" style="color:var(--sp-text-muted)">/10</span>
-                        </td>
-                        <td class="text-xs" style="color:var(--sp-text-muted)">
-                            {{ $lt->ket_thuc_luc?->diffForHumans() ?? '—' }}
-                        </td>
-                        <td>
-                            @if($lt->diem_so >= 5)
-                                <span class="sp-badge sp-badge-green">✅ Đạt</span>
-                            @else
-                                <span class="sp-badge sp-badge-red">❌ Chưa đạt</span>
-                            @endif
-                        </td>
-                        <td>
-                            <a href="{{ route('exam.result', $lt) }}" wire:navigate
-                               class="sp-btn sp-btn-outline text-xs py-1 px-2">Xem lại</a>
-                        </td>
-                    </tr>
-                    @endforeach
-                </tbody>
-            </table>
-        </div>
-    </div>
-    @endif
-
+  </div>
 </div>
-
-@push('scripts')
-<script>
-document.addEventListener('DOMContentLoaded', function () {
-    @if(!empty($radarData['categories']))
-    const radarOptions = {
-        chart: { type: 'radar', height: 280, toolbar: { show: false },
-                 fontFamily: 'Inter, sans-serif' },
-        series: [{ name: 'Thành thạo', data: @json($radarData['series'] ?? []) }],
-        xaxis:  { categories: @json($radarData['categories'] ?? []) },
-        yaxis:  { show: false, min: 0, max: 100 },
-        fill:   { opacity: 0.25, colors: ['#6366f1'] },
-        stroke: { width: 2, colors: ['#6366f1'] },
-        markers:{ size: 4, colors: ['#6366f1'] },
-        tooltip: {
-            y: { formatter: val => val + '%' }
-        },
-        plotOptions: {
-            radar: { polygons: { strokeColors: '#e2e8f0', fill: { colors: ['#f8fafc','#fff'] } } }
-        }
-    };
-    new ApexCharts(document.querySelector('#radarChart'), radarOptions).render();
-    @endif
-});
-</script>
-@endpush

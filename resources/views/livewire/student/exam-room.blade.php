@@ -88,10 +88,11 @@
                      alt="Hình câu hỏi" class="rounded-lg mb-4 max-h-48 object-contain w-full">
             @endif
 
-            <div class="space-y-2.5">
+            <div class="space-y-2.5" x-data="{ selected: {{ json_encode($dapAnDaChon) }} }">
                 @foreach($cq['lua_chon'] as $i => $lc)
-                <div wire:click="chonDapAn({{ $cq['id'] }}, {{ $lc['id'] }})"
-                     class="exam-option {{ ($dapAnDaChon[$cq['id']] ?? null) == $lc['id'] ? 'selected' : '' }}"
+                <div @click="selected[{{ $cq['id'] }}] = {{ $lc['id'] }}; $wire.chonDapAn({{ $cq['id'] }}, {{ $lc['id'] }})"
+                     class="exam-option"
+                     :class="selected[{{ $cq['id'] }}] == {{ $lc['id'] }} ? 'selected' : ''"
                      style="cursor:pointer">
                     <div class="exam-option-key">{{ $keys[$i] ?? ($i+1) }}</div>
                     <div class="text-sm leading-relaxed">{{ $lc['noi_dung'] }}</div>
@@ -100,7 +101,7 @@
             </div>
         </div>
 
-        <div class="flex justify-between">
+        <div class="flex justify-between mt-5">
             <button wire:click="cauTruoc" class="sp-btn sp-btn-outline"
                     @disabled($cauHienTai === 0)>← Câu trước</button>
             <button wire:click="cauTiep" class="sp-btn sp-btn-primary"

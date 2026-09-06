@@ -15,14 +15,14 @@ return [
 
     /*
      | Các model hiện đang hoạt động (2026):
-     |  - gemini-3.6-flash          (khuyến nghị — nhanh, mạnh, bản mới nhất)
-     |  - gemini-3.5-pro            (chính xác hơn cho logic phức tạp)
+     |  - gemini-3.6-flash          (khuyến nghị — nhanh, multimodal, workhorse)
+     |  - gemini-3.8-flash          (mới nhất — Sep 2026)
+     |  - gemini-1.5-flash          (fallback ổn định)
      */
     'model'    => env('GEMINI_MODEL', 'gemini-3.6-flash'),
 
     /*
      | API Version: 'v1' (stable) hoặc 'v1beta' (có tính năng thử nghiệm)
-     | gemini-3-flash-preview chỉ hoạt động trên v1beta.
      */
     'api_version' => env('GEMINI_API_VERSION', 'v1beta'),
 
@@ -31,10 +31,10 @@ return [
     // Timeout HTTP (giây) — 180s để xử lý PDF lớn nhiều câu hỏi
     'timeout'  => (int) env('GEMINI_TIMEOUT', 180),
 
-    // Retry khi bị lỗi tạm thời (HTTP client retry)
+    // Retry khi bị lỗi tạm thời (503 rate limit / server overload)
     'retry' => [
-        'times' => 1,
-        'sleep' => 1000, // Thất bại nhanh để Job có thể xử lý release/delay thay vì block Worker
+        'times' => 2,
+        'sleep' => 3000, // 3 giây giữa các lần retry
     ],
 
     // Safety settings — tắt filter để tránh block câu hỏi học thuật
@@ -51,7 +51,7 @@ return [
         'topP'            => 0.95,
         'topK'            => 40,
         // Tăng token limit để tránh JSON bị cắt giữa chừng khi PDF lớn
-        'maxOutputTokens' => 16384,
+        'maxOutputTokens' => 32768,
         // !! KHÔNG dùng 'responseMimeType' => 'application/json' ở đây !!
         // Lý do: khi set responseMimeType, Gemini KHÔNG trả text vào
         // candidates[0].content.parts[0].text mà thay đổi response structure,

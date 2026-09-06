@@ -3,85 +3,94 @@
 namespace App\Livewire\Admin;
 
 use App\Models\User;
-use Illuminate\Support\Facades\Hash;
 use Livewire\Attributes\Layout;
-use Livewire\Attributes\Title;
 use Livewire\Component;
-use Livewire\WithPagination;
 
 #[Layout('layouts.app')]
-#[Title('Quản lý người dùng')]
 class UserManagement extends Component
 {
-    use WithPagination;
-
     public string $search = '';
-    public ?int   $editUserId = null;
-    public string $editName   = '';
-    public string $editRole   = 'student';
-    public string $editStatus = 'active';
-    public ?int   $resetUserId = null;
-    public string $newPassword = '';
+    public string $roleFilter = '';
+    public bool $selectAll = false;
+    public array $selected = [];
+    public ?int $deleteId = null;
+    public ?int $editUserId = null;
 
-    public function updatingSearch(): void
+    public array $roles = ['admin', 'teacher', 'student'];
+
+    // Sync selectAll toggle with individual checkboxes
+    public function updatedSelectAll(bool $value): void
     {
-        $this->resetPage();
+        $this->selected = $value
+            ? $this->getFilteredUsers()->pluck('id')->toArray()
+            : [];
     }
 
-    public function updateUser(): void
+    public function getFilteredUsers()
     {
-        $this->validate([
-            'editUserId' => ['required', 'integer', 'exists:users,id'],
-            'editName'   => ['required', 'string', 'min:2', 'max:255'],
-            'editRole'   => ['required', 'in:student,teacher,super_admin'],
-            'editStatus' => ['required', 'in:active,suspended'],
-        ]);
-        $user = User::findOrFail($this->editUserId);
-        if ($user->id === auth()->id()) {
-            session()->flash('error', 'Bạn không thể tự sửa tài khoản của mình.');
-            return;
-        }
-        $user->update(['name' => $this->editName, 'is_active' => $this->editStatus === 'active']);
-        $user->syncRoles([$this->editRole]);
-        session()->flash('success', 'Đã cập nhật thông tin của ' . $user->name . '.');
-        $this->reset(['editUserId', 'editName', 'editRole', 'editStatus']);
-        $this->dispatch('user-updated');
+        return User::query()
+            ->when($this->search, fn($q) => $q->where(function ($q) {
+                $q->where('name', 'like', "%{$this->search}%")
+                  ->orWhere('email', 'like', "%{$this->search}%");
+            }))
+            ->when($this->roleFilter, fn($q) => $q->where('role', $this->roleFilter))
+            ->latest()
+            ->get();
     }
 
-    public function resetPassword(): void
+    public function changeRole(int $userId, string $role): void
     {
-        $this->validate([
-            'resetUserId' => ['required', 'integer', 'exists:users,id'],
-            'newPassword' => ['required', 'string', 'min:8'],
-        ]);
-        $user = User::findOrFail($this->resetUserId);
-        $user->update(['password' => Hash::make($this->newPassword), 'remember_token' => null]);
-        session()->flash('success', 'Đã đặt lại mật khẩu cho ' . $user->name . '.');
-        $this->reset(['resetUserId', 'newPassword']);
-        $this->dispatch('password-reset');
+        User::findOrFail($userId)->update(['role' => $role]);
+        session()->flash('success', 'Role updated.');
     }
 
-    public function toggleSuspend(int $userId): void
+    public function toggleBan(int $userId): void
     {
         $user = User::findOrFail($userId);
-        if ($user->id === auth()->id()) {
-            session()->flash('error', 'Bạn không thể tự khóa tài khoản của mình.');
-            return;
+        $user->is_active = ! $user->is_active;
+        $user->save();
+    }
+
+    public function confirmDelete(): void
+    {
+        if ($this->deleteId) {
+            User::findOrFail($this->deleteId)->delete();
+            $this->deleteId = null;
+            $this->selected = array_filter($this->selected, fn($id) => $id !== $this->deleteId);
+            session()->flash('success', 'User deleted.');
         }
-        $user->update(['is_active' => !($user->is_active ?? true)]);
-        $label = $user->is_active ? 'mở khóa' : 'khóa';
-        session()->flash('success', 'Đã ' . $label . ' tài khoản ' . $user->name . '.');
+    }
+
+    public function bulkDelete(): void
+    {
+        User::whereIn('id', $this->selected)->delete();
+        $this->selected = [];
+        $this->selectAll = false;
+        session()->flash('success', count($this->selected) . ' users deleted.');
+    }
+
+    public function bulkBan(): void
+    {
+        User::whereIn('id', $this->selected)->update(['is_active' => false]);
+        $this->selected = [];
+        session()->flash('success', 'Selected users banned.');
     }
 
     public function render()
     {
-        $users = User::with('roles')
-            ->when($this->search, function ($q) {
-                $q->where('name', 'like', '%' . $this->search . '%')
-                  ->orWhere('email', 'like', '%' . $this->search . '%');
-            })
-            ->latest()
-            ->paginate(15);
-        return view('livewire.admin.user-management', compact('users'));
+        $users = $this->getFilteredUsers()->map(fn($u) => [
+            'id'     => $u->id,
+            'name'   => $u->name,
+            'email'  => $u->email,
+            'role'   => $u->role,
+            'status' => $u->is_active ? 'active' : 'banned',
+            'joined' => $u->created_at->format('d M Y'),
+            'avatar' => strtoupper(substr($u->name, 0, 2)),
+        ])->toArray();
+
+        return view('livewire.admin.user-management', [
+            'users' => $users,
+            'roles' => $this->roles,
+        ]);
     }
 }
