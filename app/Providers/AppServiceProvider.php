@@ -42,6 +42,10 @@ class AppServiceProvider extends ServiceProvider
         // Default pagination views
         \Illuminate\Pagination\LengthAwarePaginator::defaultView('vendor.pagination.tailwind');
         \Illuminate\Pagination\LengthAwarePaginator::defaultSimpleView('vendor.pagination.simple-tailwind');
+        // Force HTTPS in production (Render uses reverse proxy)
+        if (config('app.env') === 'production') {
+            \Illuminate\Support\Facades\URL::forceScheme('https');
+        }
 
     }
 }
