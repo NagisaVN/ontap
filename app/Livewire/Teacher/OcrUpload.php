@@ -165,17 +165,25 @@ class OcrUpload extends Component
                     $this->soLuongKho
                 );
             } else {
-                // ── Vòng lặp trích xuất: tiếp tục gọi cho đến khi hết câu ──
+                // ── Vòng lặp trích xuất ──
                 $questions = $gemini->ocrTrichXuatCauHoi($base64Content, $mimeType);
 
-                $maxRounds = 5;  // tối đa 5 lần gọi (≈ 5×80 = 400 câu)
+                // Cảnh báo: Render giới hạn request 100s sẽ báo lỗi 502 Bad Gateway.
+                // Do đó, chỉ nên lặp tối đa 2 lần hoặc 50 giây.
+                $maxRounds = 2;  
                 $round     = 0;
+                $startTime = time();
 
                 while ($round < $maxRounds && count($questions) > 0) {
                     $lastQuestion = end($questions);
                     $lastText     = $lastQuestion['noi_dung'] ?? '';
 
                     if (empty($lastText)) break;
+                    
+                    // Nếu đã chạy hơn 45 giây thì dừng lại để tránh 502 Bad Gateway trên Render
+                    if (time() - $startTime > 45) {
+                        break;
+                    }
 
                     // Thử lấy thêm câu phía sau câu cuối cùng
                     $more = $gemini->ocrTrichXuatTiepTheo($base64Content, $mimeType, $lastText);
