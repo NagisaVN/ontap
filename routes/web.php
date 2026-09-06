@@ -5,8 +5,18 @@ use App\Livewire\Admin;
 use App\Livewire\Student;
 use App\Livewire\Teacher;
 
-// ── Root redirect ───────────────────────────────────────────
-Route::redirect('/', '/login');
+// ── Root redirect: đã login → dashboard theo role, chưa login → login ──
+Route::get('/', function () {
+    if (auth()->check()) {
+        $user = auth()->user();
+        return match (true) {
+            $user->hasRole('super_admin') => redirect()->route('admin.dashboard'),
+            $user->hasRole('teacher')     => redirect()->route('teacher.dashboard'),
+            default                       => redirect()->route('student.dashboard'),
+        };
+    }
+    return redirect()->route('login');
+});
 
 // ── Profile ─────────────────────────────────────────────────
 Route::get('/profile', \App\Livewire\Profile::class)
@@ -47,8 +57,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ->middleware('role:teacher|super_admin')
         ->group(function () {
             Route::get('/',             Teacher\Dashboard::class)       ->name('teacher.dashboard');
-            Route::get('/cau-hoi',      Teacher\QuestionManager::class) ->name('teacher.questions');
-            Route::get('/tao-cau-hoi',  Teacher\QuestionCreator::class) ->name('teacher.create-question');
+            Route::get('/cau-hoi',             Teacher\QuestionManager::class) ->name('teacher.questions');
+            Route::get('/cau-hoi/{id}/sua',    Teacher\QuestionEditor::class)  ->name('teacher.edit-question');
+            Route::get('/tao-cau-hoi',         Teacher\QuestionCreator::class) ->name('teacher.create-question');
             Route::get('/de-thi',       Teacher\ExamBuilder::class)     ->name('teacher.exam-builder');
             Route::get('/bao-cao',      Teacher\Reports::class)          ->name('teacher.reports');
 

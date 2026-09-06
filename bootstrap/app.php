@@ -4,6 +4,7 @@ use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Request;
+use Symfony\Component\HttpKernel\Exception\HttpException;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -23,4 +24,29 @@ return Application::configure(basePath: dirname(__DIR__))
         $exceptions->shouldRenderJsonWhen(
             fn (Request $request) => $request->is('api/*') || $request->expectsJson(),
         );
+
+        // ── Khi bị 403 (sai role) → redirect về dashboard đúng role ──
+        // Thay vì hiện trang lỗi 403, user được đưa về đúng nơi của mình
+        $exceptions->render(function (\Throwable $e, Request $request) {
+            $is403 = ($e instanceof HttpException && $e->getStatusCode() === 403)
+                  || ($e instanceof \Spatie\Permission\Exceptions\UnauthorizedException);
+
+            if ($is403 && !$request->is('api/*') && !$request->expectsJson()) {
+                if (auth()->check()) {
+                    $user = auth()->user();
+                    $destination = match (true) {
+                        $user->hasRole('super_admin') => route('admin.dashboard'),
+                        $user->hasRole('teacher')     => route('teacher.dashboard'),
+                        default                       => route('student.dashboard'),
+                    };
+                    return redirect($destination)
+                        ->with('warning', 'Bạn không có quyền truy cập trang đó.');
+                }
+                // Guest: redirect về login
+                return redirect()->route('login');
+            }
+
+            // Trả về null = dùng xử lý mặc định của Laravel
+            return null;
+        });
     })->create();

@@ -313,6 +313,21 @@
 
             {{-- Page content --}}
             <main class="flex-1 overflow-y-auto p-4 sm:p-6" :class="dark ? 'bg-slate-900' : 'bg-slate-50/50'">
+
+                {{-- Warning flash (403 redirect) --}}
+                @if(session('warning'))
+                <div x-data="{ show: true }" x-show="show" x-transition
+                     class="mb-4 flex items-center justify-between gap-3 px-4 py-3 bg-amber-50 border border-amber-200 rounded-xl text-sm text-amber-800">
+                    <div class="flex items-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" class="text-amber-500 flex-shrink-0"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                        {{ session('warning') }}
+                    </div>
+                    <button @click="show = false" class="text-amber-500 hover:text-amber-700">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                    </button>
+                </div>
+                @endif
+
                 {{ $slot }}
             </main>
         </div>
