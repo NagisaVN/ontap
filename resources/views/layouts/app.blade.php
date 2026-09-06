@@ -26,15 +26,34 @@
 
     <div x-data="{
         collapsed: false,
+        mobileOpen: false,
         notifOpen: false,
         userMenuOpen: false
     }" class="flex h-screen overflow-hidden">
+
+        {{-- Mobile backdrop — click to close sidebar --}}
+        <div x-show="mobileOpen"
+             x-transition:enter="transition-opacity ease-out duration-200"
+             x-transition:enter-start="opacity-0"
+             x-transition:enter-end="opacity-100"
+             x-transition:leave="transition-opacity ease-in duration-150"
+             x-transition:leave-start="opacity-100"
+             x-transition:leave-end="opacity-0"
+             @click="mobileOpen = false"
+             style="display:none"
+             class="fixed inset-0 bg-black/50 backdrop-blur-sm z-20 lg:hidden"></div>
         
         {{-- Sidebar --}}
+        {{-- Mobile: fixed drawer overlay | Desktop: relative collapsible panel --}}
         <aside
-            :class="collapsed ? 'w-16' : 'w-64'"
-            class="flex flex-col border-r transition-all duration-300 shrink-0 z-20"
-            :class="dark ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'"
+            class="flex flex-col border-r transition-all duration-300 shrink-0
+                   fixed inset-y-0 left-0 z-30
+                   lg:relative lg:z-auto lg:translate-x-0"
+            :class="[
+                mobileOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full lg:translate-x-0',
+                collapsed ? 'lg:w-16' : 'w-64',
+                dark ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'
+            ]"
         >
             {{-- Logo --}}
             <div :class="collapsed ? 'justify-center px-0' : 'px-5'" class="flex items-center h-16 border-b transition-all duration-300" :class="dark ? 'border-slate-700' : 'border-slate-100'">
@@ -193,8 +212,8 @@
 
 
 
-            {{-- Collapse button --}}
-            <div class="p-3 border-t" :class="dark ? 'border-slate-700' : 'border-slate-100'">
+            {{-- Collapse button — desktop only --}}
+            <div class="hidden lg:block p-3 border-t" :class="dark ? 'border-slate-700' : 'border-slate-100'">
                 <button
                     @click="collapsed = !collapsed"
                     class="w-full flex items-center justify-center h-9 rounded-xl transition-colors"
@@ -210,14 +229,17 @@
             </div>
         </aside>
 
-        {{-- Main area --}}
-        <div class="flex flex-col flex-1 min-w-0">
+        {{-- Main area — full width on mobile (sidebar overlays it), flex-1 on desktop --}}
+        <div class="flex flex-col flex-1 min-w-0 w-full">
             
             {{-- Header --}}
-            <header class="h-16 border-b flex items-center justify-between px-6 shrink-0 z-10 transition-colors duration-300" :class="dark ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'">
+            <header class="h-16 border-b flex items-center justify-between px-4 sm:px-6 shrink-0 z-10 transition-colors duration-300" :class="dark ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'">
                 <div class="flex items-center gap-3 text-sm">
-                    {{-- Mobile menu toggle --}}
-                    <button @click="collapsed = !collapsed" class="lg:hidden p-1.5 -ml-2 rounded-lg" :class="dark ? 'text-slate-400 hover:bg-slate-700' : 'text-slate-500 hover:bg-slate-100'">
+                    {{-- Mobile: toggle drawer | Desktop: collapse sidebar --}}
+                    <button
+                        @click="window.innerWidth >= 1024 ? (collapsed = !collapsed) : (mobileOpen = !mobileOpen)"
+                        class="p-1.5 -ml-1 rounded-lg transition-colors"
+                        :class="dark ? 'text-slate-400 hover:bg-slate-700' : 'text-slate-500 hover:bg-slate-100'">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
                     </button>
                     <h1 class="font-bold text-lg" :class="dark ? 'text-white' : 'text-slate-800'">{{ $title ?? 'Tổng quan' }}</h1>
