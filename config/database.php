@@ -59,12 +59,13 @@ return [
             'prefix_indexes' => true,
             'strict' => true,
             'engine' => null,
-            'options' => extension_loaded('pdo_mysql') ? array_merge(
-                array_filter([
-                    Mysql::ATTR_SSL_CA => env('MYSQL_ATTR_SSL_CA'),
-                ]),
-                [PDO::MYSQL_ATTR_SSL_VERIFY_SERVER_CERT => false]
-            ) : [],
+            'options' => extension_loaded('pdo_mysql') ? (function () {
+                $opts = [1014 => false]; // MYSQL_ATTR_SSL_VERIFY_SERVER_CERT = false
+                if ($ca = env('MYSQL_ATTR_SSL_CA')) {
+                    $opts[Mysql::ATTR_SSL_CA] = $ca;
+                }
+                return $opts;
+            })() : [],
         ],
 
         'mariadb' => [
