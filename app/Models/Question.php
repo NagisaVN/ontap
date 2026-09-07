@@ -17,6 +17,7 @@ class Question extends Model
 
     protected $fillable = [
         'chuong_id',
+        'nguoi_dung_id',
         'noi_dung',
         'hinh_anh',
         'do_kho',
@@ -65,6 +66,11 @@ class Question extends Model
     public function chuong(): BelongsTo
     {
         return $this->belongsTo(SubSubject::class, 'chuong_id');
+    }
+
+    public function nguoiDung(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'nguoi_dung_id');
     }
 
     public function luaChon(): HasMany

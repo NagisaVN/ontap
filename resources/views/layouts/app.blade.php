@@ -47,8 +47,8 @@
         {{-- Mobile: fixed drawer overlay | Desktop: relative collapsible panel --}}
         <aside
             class="flex flex-col border-r transition-all duration-300 shrink-0
-                   fixed inset-y-0 left-0 z-30
-                   lg:relative lg:z-auto lg:translate-x-0"
+                   fixed inset-y-0 left-0 z-30 h-screen
+                   lg:relative lg:z-auto lg:translate-x-0 lg:h-screen"
             :class="[
                 mobileOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full lg:translate-x-0',
                 collapsed ? 'lg:w-16' : 'w-64',
