@@ -212,20 +212,35 @@
 
 
 
-            {{-- Collapse button — desktop only --}}
-            <div class="hidden lg:block p-3 border-t" :class="dark ? 'border-slate-700' : 'border-slate-100'">
+            {{-- Sidebar bottom: Collapse (desktop) / Close drawer (mobile) --}}
+            <div class="shrink-0 p-3 border-t" :class="dark ? 'border-slate-700' : 'border-slate-100'">
+
+                {{-- Desktop: collapse toggle --}}
                 <button
                     @click="collapsed = !collapsed"
-                    class="w-full flex items-center justify-center h-9 rounded-xl transition-colors"
-                    :class="dark ? 'text-slate-400 hover:bg-slate-700/50 hover:text-slate-200' : 'text-slate-400 hover:bg-slate-100 hover:text-slate-600'"
+                    class="hidden lg:flex w-full items-center h-9 rounded-xl transition-colors px-3"
+                    :class="[collapsed ? 'justify-center' : 'gap-3', dark ? 'text-slate-400 hover:bg-slate-700/50 hover:text-slate-200' : 'text-slate-500 hover:bg-slate-100 hover:text-slate-700']"
+                    :title="collapsed ? 'Mở rộng' : 'Thu gọn'"
                 >
                     <span x-show="collapsed" style="display: none;">
                         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
                     </span>
-                    <span x-show="!collapsed">
+                    <span x-show="!collapsed" class="flex items-center gap-3">
                         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+                        <span class="text-sm font-medium">Thu gọn</span>
                     </span>
                 </button>
+
+                {{-- Mobile: close drawer button --}}
+                <button
+                    @click="mobileOpen = false"
+                    class="lg:hidden w-full flex items-center gap-3 px-3 h-9 rounded-xl transition-colors"
+                    :class="dark ? 'text-slate-400 hover:bg-slate-700/50 hover:text-slate-200' : 'text-slate-500 hover:bg-slate-100 hover:text-slate-700'"
+                >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+                    <span class="text-sm font-medium">Đóng menu</span>
+                </button>
+
             </div>
         </aside>
 
