@@ -21,6 +21,15 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 
     @stack('head')
+
+    <style>
+        /* Smooth sidebar width animation — GPU accelerated, width only */
+        #app-sidebar {
+            transition: width 280ms cubic-bezier(0.4, 0, 0.2, 1);
+            will-change: width;
+        }
+        /* Mobile drawer slide-in transition is handled by Tailwind translate classes */
+    </style>
 </head>
 <body class="antialiased font-sans text-slate-900 transition-colors duration-300" :class="dark ? 'bg-slate-900 text-slate-100' : 'bg-slate-50'">
 
@@ -45,8 +54,8 @@
         
         {{-- Sidebar --}}
         {{-- Mobile: fixed drawer overlay | Desktop: relative collapsible panel --}}
-        <aside
-            class="flex flex-col border-r transition-all duration-300 shrink-0 overflow-hidden
+        <aside id="app-sidebar"
+            class="flex flex-col border-r shrink-0 overflow-hidden
                    fixed inset-y-0 left-0 z-30 h-screen
                    lg:relative lg:z-auto lg:translate-x-0 lg:h-screen"
             :class="[
@@ -61,7 +70,7 @@
                     <div class="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center shrink-0">
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-white"><path d="M21.42 10.922a2 2 0 0 1-.019 3.138l-8.5 7.14a2 2 0 0 1-2.54 0l-8.5-7.14a2 2 0 0 1-.019-3.138l9-7.4a2 2 0 0 1 2.54 0Z"/><path d="M22 10v6"/><path d="M6 12.5V16a6 3 0 0 0 12 0v-3.5"/></svg>
                     </div>
-                    <span x-show="!collapsed" x-transition.opacity.duration.200ms style="display: none;" class="font-bold text-lg tracking-tight whitespace-nowrap" :class="dark ? 'text-white' : 'text-slate-900'">SmartPrep</span>
+                    <span x-show="!collapsed" x-transition:enter="transition-opacity ease-out duration-200 delay-[180ms]" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" x-transition:leave="transition-opacity ease-in duration-[80ms]" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0" style="display: none;" class="font-bold text-lg tracking-tight whitespace-nowrap" :class="dark ? 'text-white' : 'text-slate-900'">SmartPrep</span>
                 </a>
             </div>
 
@@ -71,27 +80,27 @@
                 @auth
                     {{-- STUDENT SECTION --}}
                     @can('student')
-                        <div x-show="!collapsed" x-transition.opacity.duration.100ms style="display: none;" class="px-2 mt-4 mb-2 text-xs font-bold uppercase tracking-wider" :class="dark ? 'text-slate-500' : 'text-slate-400'">Học tập</div>
+                        <div x-show="!collapsed" x-transition:enter="transition-opacity ease-out duration-200 delay-[180ms]" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" x-transition:leave="transition-opacity ease-in duration-[80ms]" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0" style="display: none;" class="px-2 mt-4 mb-2 text-xs font-bold uppercase tracking-wider" :class="dark ? 'text-slate-500' : 'text-slate-400'">Học tập</div>
                         
                         <a href="{{ route('dashboard') }}" wire:navigate :title="collapsed ? 'Tổng quan' : null"
                            class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold transition-colors"
                            :class="[collapsed ? 'justify-center' : '', dark ? '{{ request()->routeIs('dashboard') ? 'bg-indigo-500/10 text-indigo-400' : 'text-slate-400 hover:bg-slate-700/50 hover:text-slate-200' }}' : '{{ request()->routeIs('dashboard') ? 'bg-indigo-50 text-indigo-700' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900' }}']">
                             <span class="shrink-0"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg></span>
-                            <span x-show="!collapsed" x-transition.opacity.duration.150ms style="display: none;" class="truncate overflow-hidden whitespace-nowrap">Tổng quan</span>
+                            <span x-show="!collapsed" x-transition:enter="transition-opacity ease-out duration-200 delay-[180ms]" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" x-transition:leave="transition-opacity ease-in duration-[80ms]" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0" style="display: none;" class="truncate overflow-hidden whitespace-nowrap">Tổng quan</span>
                         </a>
 
                         <a href="{{ route('student.thi') }}" wire:navigate.hover :title="collapsed ? 'Làm bài thi' : null"
                            class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold transition-colors mt-1"
                            :class="[collapsed ? 'justify-center' : '', dark ? '{{ request()->routeIs('student.thi') ? 'bg-indigo-500/10 text-indigo-400' : 'text-slate-400 hover:bg-slate-700/50 hover:text-slate-200' }}' : '{{ request()->routeIs('student.thi') ? 'bg-indigo-50 text-indigo-700' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900' }}']">
                             <span class="shrink-0"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg></span>
-                            <span x-show="!collapsed" x-transition.opacity.duration.150ms style="display: none;" class="truncate overflow-hidden whitespace-nowrap">Làm bài thi</span>
+                            <span x-show="!collapsed" x-transition:enter="transition-opacity ease-out duration-200 delay-[180ms]" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" x-transition:leave="transition-opacity ease-in duration-[80ms]" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0" style="display: none;" class="truncate overflow-hidden whitespace-nowrap">Làm bài thi</span>
                         </a>
 
                         <a href="{{ route('student.on-tap') }}" wire:navigate :title="collapsed ? 'Ôn điểm yếu' : null"
                            class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold transition-colors mt-1"
                            :class="[collapsed ? 'justify-center' : '', dark ? '{{ request()->routeIs('student.on-tap') ? 'bg-indigo-500/10 text-indigo-400' : 'text-slate-400 hover:bg-slate-700/50 hover:text-slate-200' }}' : '{{ request()->routeIs('student.on-tap') ? 'bg-indigo-50 text-indigo-700' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900' }}']">
                             <span class="shrink-0"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg></span>
-                            <span x-show="!collapsed" x-transition.opacity.duration.150ms style="display: none;" class="truncate overflow-hidden whitespace-nowrap">Ôn điểm yếu</span>
+                            <span x-show="!collapsed" x-transition:enter="transition-opacity ease-out duration-200 delay-[180ms]" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" x-transition:leave="transition-opacity ease-in duration-[80ms]" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0" style="display: none;" class="truncate overflow-hidden whitespace-nowrap">Ôn điểm yếu</span>
                         </a>
 
                         <a href="{{ route('student.history') }}" wire:navigate :title="collapsed ? 'Lịch sử' : null"
@@ -102,14 +111,14 @@
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 8v8m-4-5v5m-4-2v2M3 20h18"/>
                                 </svg>
                             </span>
-                            <span x-show="!collapsed" x-transition.opacity.duration.150ms style="display: none;" class="truncate overflow-hidden whitespace-nowrap">Lịch sử</span>
+                            <span x-show="!collapsed" x-transition:enter="transition-opacity ease-out duration-200 delay-[180ms]" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" x-transition:leave="transition-opacity ease-in duration-[80ms]" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0" style="display: none;" class="truncate overflow-hidden whitespace-nowrap">Lịch sử</span>
                         </a>
                     @endcan
 
 
                     {{-- TEACHER SECTION --}}
                     @can('teacher')
-                        <div x-show="!collapsed" x-transition.opacity.duration.100ms style="display: none;" class="px-2 mt-6 mb-2 text-xs font-bold uppercase tracking-wider" :class="dark ? 'text-slate-500' : 'text-slate-400'">Quản lý GV</div>
+                        <div x-show="!collapsed" x-transition:enter="transition-opacity ease-out duration-200 delay-[180ms]" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" x-transition:leave="transition-opacity ease-in duration-[80ms]" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0" style="display: none;" class="px-2 mt-6 mb-2 text-xs font-bold uppercase tracking-wider" :class="dark ? 'text-slate-500' : 'text-slate-400'">Quản lý GV</div>
 
                         {{-- Dashboard --}}
                         <a href="{{ route('teacher.dashboard') }}" wire:navigate :title="collapsed ? 'Tổng quan GV' : null"
@@ -118,7 +127,7 @@
                             <span class="shrink-0">
                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1" stroke-width="2"/><rect x="14" y="3" width="7" height="7" rx="1" stroke-width="2"/><rect x="3" y="14" width="7" height="7" rx="1" stroke-width="2"/><rect x="14" y="14" width="7" height="7" rx="1" stroke-width="2"/></svg>
                             </span>
-                            <span x-show="!collapsed" x-transition.opacity.duration.150ms style="display: none;" class="truncate overflow-hidden whitespace-nowrap">Dashboard</span>
+                            <span x-show="!collapsed" x-transition:enter="transition-opacity ease-out duration-200 delay-[180ms]" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" x-transition:leave="transition-opacity ease-in duration-[80ms]" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0" style="display: none;" class="truncate overflow-hidden whitespace-nowrap">Dashboard</span>
                         </a>
 
                         {{-- Questions --}}
@@ -128,7 +137,7 @@
                             <span class="shrink-0">
                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" stroke-width="2"/><path stroke-width="2" stroke-linecap="round" d="M9 9h.01M9 12h.01M9 15h.01M13 9h3M13 12h3M13 15h3"/></svg>
                             </span>
-                            <span x-show="!collapsed" x-transition.opacity.duration.150ms style="display: none;" class="truncate overflow-hidden whitespace-nowrap">Câu hỏi</span>
+                            <span x-show="!collapsed" x-transition:enter="transition-opacity ease-out duration-200 delay-[180ms]" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" x-transition:leave="transition-opacity ease-in duration-[80ms]" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0" style="display: none;" class="truncate overflow-hidden whitespace-nowrap">Câu hỏi</span>
                         </a>
 
                         {{-- Add Question --}}
@@ -138,7 +147,7 @@
                             <span class="shrink-0">
                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" stroke-width="2"/><path stroke-width="2" stroke-linecap="round" d="M12 8v8M8 12h8"/></svg>
                             </span>
-                            <span x-show="!collapsed" x-transition.opacity.duration.150ms style="display: none;" class="truncate overflow-hidden whitespace-nowrap">Thêm câu hỏi</span>
+                            <span x-show="!collapsed" x-transition:enter="transition-opacity ease-out duration-200 delay-[180ms]" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" x-transition:leave="transition-opacity ease-in duration-[80ms]" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0" style="display: none;" class="truncate overflow-hidden whitespace-nowrap">Thêm câu hỏi</span>
                         </a>
 
                         {{-- OCR Upload --}}
@@ -148,7 +157,7 @@
                             <span class="shrink-0">
                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline stroke-width="2" stroke-linecap="round" stroke-linejoin="round" points="17 8 12 3 7 8"/><line stroke-width="2" stroke-linecap="round" x1="12" y1="3" x2="12" y2="15"/></svg>
                             </span>
-                            <span x-show="!collapsed" x-transition.opacity.duration.150ms style="display: none;" class="truncate overflow-hidden whitespace-nowrap">OCR Upload</span>
+                            <span x-show="!collapsed" x-transition:enter="transition-opacity ease-out duration-200 delay-[180ms]" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" x-transition:leave="transition-opacity ease-in duration-[80ms]" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0" style="display: none;" class="truncate overflow-hidden whitespace-nowrap">OCR Upload</span>
                         </a>
 
                         {{-- Exam Builder --}}
@@ -158,7 +167,7 @@
                             <span class="shrink-0">
                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
                             </span>
-                            <span x-show="!collapsed" x-transition.opacity.duration.150ms style="display: none;" class="truncate overflow-hidden whitespace-nowrap">Tạo đề thi</span>
+                            <span x-show="!collapsed" x-transition:enter="transition-opacity ease-out duration-200 delay-[180ms]" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" x-transition:leave="transition-opacity ease-in duration-[80ms]" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0" style="display: none;" class="truncate overflow-hidden whitespace-nowrap">Tạo đề thi</span>
                         </a>
 
                         {{-- Reports --}}
@@ -168,7 +177,7 @@
                             <span class="shrink-0">
                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline stroke-width="2" stroke-linecap="round" points="14 2 14 8 20 8"/><line stroke-width="2" stroke-linecap="round" x1="16" y1="13" x2="8" y2="13"/><line stroke-width="2" stroke-linecap="round" x1="16" y1="17" x2="8" y2="17"/><polyline stroke-width="2" stroke-linecap="round" points="10 9 9 9 8 9"/></svg>
                             </span>
-                            <span x-show="!collapsed" x-transition.opacity.duration.150ms style="display: none;" class="truncate overflow-hidden whitespace-nowrap">Báo cáo</span>
+                            <span x-show="!collapsed" x-transition:enter="transition-opacity ease-out duration-200 delay-[180ms]" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" x-transition:leave="transition-opacity ease-in duration-[80ms]" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0" style="display: none;" class="truncate overflow-hidden whitespace-nowrap">Báo cáo</span>
                         </a>
 
                         {{-- Chờ duyệt --}}
@@ -179,7 +188,7 @@
                                 <span class="shrink-0">
                                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                                 </span>
-                                <span x-show="!collapsed" x-transition.opacity.duration.150ms style="display: none;" class="truncate overflow-hidden whitespace-nowrap">Chờ duyệt</span>
+                                <span x-show="!collapsed" x-transition:enter="transition-opacity ease-out duration-200 delay-[180ms]" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" x-transition:leave="transition-opacity ease-in duration-[80ms]" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0" style="display: none;" class="truncate overflow-hidden whitespace-nowrap">Chờ duyệt</span>
                             </div>
                             @php $choDuyet = \App\Models\Question::choDuyet()->count(); @endphp
                             @if($choDuyet > 0)
@@ -191,20 +200,20 @@
 
                     {{-- ADMIN SECTION --}}
                     @can('admin')
-                        <div x-show="!collapsed" x-transition.opacity.duration.100ms style="display: none;" class="px-2 mt-6 mb-2 text-xs font-bold uppercase tracking-wider" :class="dark ? 'text-slate-500' : 'text-slate-400'">Admin</div>
+                        <div x-show="!collapsed" x-transition:enter="transition-opacity ease-out duration-200 delay-[180ms]" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" x-transition:leave="transition-opacity ease-in duration-[80ms]" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0" style="display: none;" class="px-2 mt-6 mb-2 text-xs font-bold uppercase tracking-wider" :class="dark ? 'text-slate-500' : 'text-slate-400'">Admin</div>
                         
                         <a href="{{ route('admin.dashboard') }}" wire:navigate :title="collapsed ? 'Quản trị hệ thống' : null"
                            class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold transition-colors"
                            :class="[collapsed ? 'justify-center' : '', dark ? '{{ request()->routeIs('admin.dashboard') || request()->routeIs('admin.users') ? 'bg-rose-500/10 text-rose-400' : 'text-slate-400 hover:bg-slate-700/50 hover:text-slate-200' }}' : '{{ request()->routeIs('admin.dashboard') || request()->routeIs('admin.users') ? 'bg-rose-50 text-rose-700' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900' }}']">
                             <span class="shrink-0"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg></span>
-                            <span x-show="!collapsed" x-transition.opacity.duration.150ms style="display: none;" class="truncate overflow-hidden whitespace-nowrap">Quản trị hệ thống</span>
+                            <span x-show="!collapsed" x-transition:enter="transition-opacity ease-out duration-200 delay-[180ms]" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" x-transition:leave="transition-opacity ease-in duration-[80ms]" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0" style="display: none;" class="truncate overflow-hidden whitespace-nowrap">Quản trị hệ thống</span>
                         </a>
                         
                         <a href="{{ route('admin.taxonomy') }}" wire:navigate :title="collapsed ? 'Cấu trúc Đào tạo' : null"
                            class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold transition-colors mt-1"
                            :class="[collapsed ? 'justify-center' : '', dark ? '{{ request()->routeIs('admin.taxonomy') ? 'bg-rose-500/10 text-rose-400' : 'text-slate-400 hover:bg-slate-700/50 hover:text-slate-200' }}' : '{{ request()->routeIs('admin.taxonomy') ? 'bg-rose-50 text-rose-700' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900' }}']">
                             <span class="shrink-0"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 14v3m4-3v3m4-3v3M3 21h18M3 10h18M3 7l9-4 9 4M4 10h16v11H4V10z" /></svg></span>
-                            <span x-show="!collapsed" x-transition.opacity.duration.150ms style="display: none;" class="truncate overflow-hidden whitespace-nowrap">Cấu trúc Đào tạo</span>
+                            <span x-show="!collapsed" x-transition:enter="transition-opacity ease-out duration-200 delay-[180ms]" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" x-transition:leave="transition-opacity ease-in duration-[80ms]" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0" style="display: none;" class="truncate overflow-hidden whitespace-nowrap">Cấu trúc Đào tạo</span>
                         </a>
                     @endcan
                 @endauth
@@ -225,7 +234,7 @@
                     <span x-show="collapsed" style="display: none;">
                         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
                     </span>
-                    <span x-show="!collapsed" x-transition.opacity.duration.150ms class="flex items-center gap-3">
+                    <span x-show="!collapsed" x-transition:enter="transition-opacity ease-out duration-200 delay-[180ms]" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" x-transition:leave="transition-opacity ease-in duration-[80ms]" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0" class="flex items-center gap-3">
                         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
                         <span class="text-sm font-medium whitespace-nowrap">Thu gọn</span>
                     </span>
