@@ -59,30 +59,38 @@ class QuestionManager extends Component
     // ── Delete ───────────────────────────────────────────────────────
     public function deleteQuestion(int $id): void
     {
-        Question::findOrFail($id)->delete();
+        $question = Question::findOrFail($id);
+        $question->delete(); // LogsActivity trait fires here automatically
         $this->selectedIds = array_values(array_filter($this->selectedIds, fn($i) => (int)$i !== $id));
-        session()->flash('status', 'Đã xóa câu hỏi #' . $id);
+        session()->flash('status', 'Da xoa cau hoi #' . $id);
     }
 
     public function deleteSelected(): void
     {
         if (empty($this->selectedIds)) return;
+        // Fetch then delete individually so LogsActivity fires for each record
+        Question::whereIn('id', $this->selectedIds)->get()->each->delete();
         $count = count($this->selectedIds);
-        Question::whereIn('id', $this->selectedIds)->delete();
         $this->selectedIds = [];
         $this->selectAll   = false;
         $this->resetPage();
-        session()->flash('status', "Đã xóa {$count} câu hỏi.");
+        session()->flash('status', "Da xoa {$count} cau hoi.");
     }
 
     public function deleteAll(): void
     {
-        $count = $this->buildQuery()->count();
-        $this->buildQuery()->delete();
+        $questions = $this->buildQuery()->get();
+        $count = $questions->count();
+        // Delete each individually so LogsActivity trait fires, then log one summary entry
+        $questions->each->delete();
+        activity()
+            ->causedBy(auth()->user())
+            ->withProperties(['count' => $count])
+            ->log("Bulk deleted {$count} questions from question bank");
         $this->selectedIds = [];
         $this->selectAll   = false;
         $this->resetPage();
-        session()->flash('status', "Đã xóa tất cả {$count} câu hỏi.");
+        session()->flash('status', "Da xoa tat ca {$count} cau hoi.");
     }
 
     // ── Edit Modal ───────────────────────────────────────────────────

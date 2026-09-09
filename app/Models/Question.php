@@ -8,10 +8,30 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Spatie\Activitylog\Traits\LogsActivity;
+use Spatie\Activitylog\LogOptions;
 
 class Question extends Model
 {
-    use SoftDeletes;
+    use SoftDeletes, LogsActivity;
+
+    /**
+     * Spatie Activitylog: auto-log creates, updates, and soft-deletes.
+     * Mass-delete via whereIn() bypasses this — handle those manually in the component.
+     */
+    public function getActivitylogOptions(): LogOptions
+    {
+        return LogOptions::defaults()
+            ->logOnly(['noi_dung', 'do_kho', 'trang_thai', 'nguoi_dung_id', 'chuong_id'])
+            ->logOnlyDirty()
+            ->dontSubmitEmptyLogs()
+            ->setDescriptionForEvent(fn(string $event) => match ($event) {
+                'created' => 'Question was created',
+                'updated' => 'Question was updated',
+                'deleted' => 'Question was deleted',
+                default   => "Question was {$event}",
+            });
+    }
 
     protected $table = 'cau_hoi';
 

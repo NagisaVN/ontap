@@ -2,59 +2,119 @@
 
 namespace App\Livewire\Admin;
 
-use App\Models\AuditLog;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
+use Livewire\WithPagination;
+use Spatie\Activitylog\Models\Activity;
 
 #[Layout('layouts.app')]
 class AuditLogs extends Component
 {
-    public string $dateFrom = '';
-    public string $actionFilter = '';
-    public int $page = 1;
-    public int $pageSize = 15;
-    public int $totalPages = 1;
-    public int $totalFiltered = 0;
+    use WithPagination;
 
-    public array $actionMeta = [
-        'CREATE' => ['label' => 'CREATE', 'variant' => 'success'],
-        'UPDATE' => ['label' => 'UPDATE', 'variant' => 'info'],
-        'DELETE' => ['label' => 'DELETE', 'variant' => 'error'],
-        'LOGIN'  => ['label' => 'LOGIN',  'variant' => 'neutral'],
+    public string $search       = '';
+    public string $dateFrom     = '';
+    public string $actionFilter = '';
+    public int    $perPage      = 6;
+
+    protected $queryString = [
+        'search'       => ['except' => ''],
+        'dateFrom'     => ['except' => ''],
+        'actionFilter' => ['except' => ''],
     ];
 
-    public function updatedDateFrom(): void    { $this->page = 1; }
-    public function updatedActionFilter(): void { $this->page = 1; }
+    public function updatingSearch(): void       { $this->resetPage(); }
+    public function updatingDateFrom(): void     { $this->resetPage(); }
+    public function updatingActionFilter(): void { $this->resetPage(); }
 
-    public function setPage(int $page): void
+    // ── Query logs — called in render() so pagination works correctly ────────
+    private function queryLogs()
     {
-        $this->page = $page;
+        return Activity::with(['causer', 'subject'])
+            ->when($this->search, fn($q) =>
+                $q->where(fn($inner) =>
+                    $inner->where('description', 'like', "%{$this->search}%")
+                           ->orWhereHasMorph('causer', [\App\Models\User::class], fn($u) =>
+                               $u->where('name',  'like', "%{$this->search}%")
+                                 ->orWhere('email', 'like', "%{$this->search}%")
+                           )
+                )
+            )
+            ->when($this->actionFilter && $this->actionFilter !== 'all', fn($q) =>
+                $q->where('event', $this->actionFilter)
+            )
+            ->when($this->dateFrom, fn($q) =>
+                $q->whereDate('created_at', '>=', $this->dateFrom)
+            )
+            ->latest()
+            ->paginate($this->perPage)
+            ->through(fn($log) => $this->formatLog($log));
     }
 
+    public function formatLog(Activity $log): array
+    {
+        $causerName   = $log->causer?->name  ?? 'System';
+        $causerEmail  = $log->causer?->email ?? '';
+        $subjectType  = class_basename($log->subject_type ?? 'Unknown');
+        $subjectLabel = $log->subject?->name
+                      ?? $log->subject?->email
+                      ?? "#{$log->subject_id}";
+
+        $changes = [];
+        $props   = $log->properties;
+
+        if ($props->has('old') && $props->has('attributes')) {
+            foreach ($props->get('attributes', []) as $field => $newVal) {
+                $oldVal = $props->get('old')[$field] ?? null;
+                if ($oldVal !== $newVal) {
+                    $changes[] = [
+                        'field' => ucfirst(str_replace('_', ' ', $field)),
+                        'from'  => $this->mask($field, $oldVal),
+                        'to'    => $this->mask($field, $newVal),
+                    ];
+                }
+            }
+        }
+        if ($props->has('new') && $props->has('old') && !$props->has('attributes')) {
+            foreach ($props->get('new', []) as $field => $newVal) {
+                $oldVal = $props->get('old')[$field] ?? null;
+                $changes[] = [
+                    'field' => ucfirst(str_replace('_', ' ', $field)),
+                    'from'  => $this->mask($field, $oldVal),
+                    'to'    => $this->mask($field, $newVal),
+                ];
+            }
+        }
+
+        return [
+            'id'              => $log->id,
+            'causer_name'     => $causerName,
+            'causer_email'    => $causerEmail,
+            'event'           => $log->event ?? 'action',
+            'description'     => $log->description,
+            'subject_type'    => $subjectType,
+            'subject_label'   => $subjectLabel,
+            'changes'         => $changes,
+            'created_at'      => $log->created_at->format('d/m H:i:s'),
+            'diff_for_humans' => $log->created_at->diffForHumans(),
+        ];
+    }
+
+    private function mask(string $field, mixed $value): string
+    {
+        return in_array($field, ['password', 'remember_token']) ? '........' : (string)($value ?? '-');
+    }
+
+    public function exportLogs(): void
+    {
+        session()->flash('info', 'Export feature coming soon.');
+    }
+
+    // ── render() fetches data and passes it to the view ────────────────────
     public function render()
     {
-        // TODO: replace with real AuditLog model query when the model exists.
-        // Example:
-        // $query = AuditLog::with('actor')
-        //     ->when($this->dateFrom,     fn($q) => $q->whereDate('created_at', '>=', $this->dateFrom))
-        //     ->when($this->actionFilter, fn($q) => $q->where('action', $this->actionFilter))
-        //     ->latest();
-        //
-        // $this->totalFiltered = $query->count();
-        // $this->totalPages    = max(1, (int) ceil($this->totalFiltered / $this->pageSize));
-        // $paginatedLogs       = $query->forPage($this->page, $this->pageSize)->get()->map(...)->toArray();
-
-        $paginatedLogs = [];
-        $this->totalFiltered = 0;
-        $this->totalPages = 1;
-
         return view('livewire.admin.audit-logs', [
-            'paginatedLogs' => $paginatedLogs,
-            'totalFiltered' => $this->totalFiltered,
-            'totalPages'    => $this->totalPages,
-            'page'          => $this->page,
-            'pageSize'      => $this->pageSize,
-            'actionMeta'    => $this->actionMeta,
+            'logs' => $this->queryLogs(),
         ]);
     }
 }

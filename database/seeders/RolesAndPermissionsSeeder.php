@@ -28,8 +28,12 @@ class RolesAndPermissionsSeeder extends Seeder
             'create exams',
             'view exams',
             'take exams',
-            // Users
+            // Users (granular)
             'manage users',
+            'create users',
+            'edit users',
+            'delete users',
+            'change user password',
             'view student progress',
             // AI
             'trigger ai jobs',

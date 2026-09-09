@@ -94,7 +94,8 @@ class PendingReview extends Component
         $so = count($this->selected);
 
         // Xóa hẳn khỏi DB — dữ liệu OCR rác không cần giữ lại
-        Question::whereIn('id', $this->selected)->delete();
+        // Fetch first, then delete individually so LogsActivity trait fires on each
+        Question::whereIn('id', $this->selected)->get()->each->delete();
 
         $this->selected        = [];
         $this->chonTatCa       = false;
