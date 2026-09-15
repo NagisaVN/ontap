@@ -2,32 +2,49 @@
 
 namespace App\Livewire\Teacher;
 
+use App\Services\TeacherReportService;
+use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Layout;
+use Livewire\Attributes\Title;
 use Livewire\Component;
 
 #[Layout('layouts.app')]
+#[Title('Báo cáo lớp học')]
 class Reports extends Component
 {
+    public string $subjectId = '';
+
+    public string $dateFrom = '';
+
+    public string $dateTo = '';
+
     public int $failThreshold = 50;
 
-    public function render()
+    public function updatedFailThreshold(): void
     {
-        // TODO: replace with real DB queries (Attempt, Question, User models)
-        $roster = [
-            ['rank' => 1, 'name' => 'Tran Minh Khoa',   'score' => 92, 'exams' => 12, 'status' => 'active', 'avatar' => 'TK'],
-            ['rank' => 2, 'name' => 'Le Thi Hoa',        'score' => 85, 'exams' => 10, 'status' => 'active', 'avatar' => 'LH'],
-            ['rank' => 3, 'name' => 'Nguyen Van Giang',   'score' => 78, 'exams' => 11, 'status' => 'active', 'avatar' => 'NG'],
-            ['rank' => 4, 'name' => 'Pham Quoc Bao',     'score' => 61, 'exams' => 8,  'status' => 'active', 'avatar' => 'PB'],
-            ['rank' => 5, 'name' => 'Hoang Anh Thu',     'score' => 44, 'exams' => 7,  'status' => 'active', 'avatar' => 'HT'],
+        $this->failThreshold = min(100, max(0, $this->failThreshold));
+    }
+
+    public function render(TeacherReportService $reports)
+    {
+        $filters = [
+            'subject_id' => $this->subjectId,
+            'date_from' => $this->dateFrom,
+            'date_to' => $this->dateTo,
+            'fail_threshold' => $this->failThreshold,
         ];
 
-        $difficultyAnalysis = [
-            ['question' => 'Derive the expression for escape velocity from first principles.', 'topic' => 'Gravitation',      'difficulty' => 'Hard',   'failRate' => 78],
-            ['question' => 'What is Faraday\'s Law?',                                          'topic' => 'Electromagnetism', 'difficulty' => 'Medium', 'failRate' => 55],
-            ['question' => 'Solve the integral ∫ sin²(x) dx',                                 'topic' => 'Integration',      'difficulty' => 'Hard',   'failRate' => 62],
-            ['question' => 'Define an exothermic reaction.',                                   'topic' => 'Thermochemistry',  'difficulty' => 'Easy',   'failRate' => 18],
-        ];
-
-        return view('livewire.teacher.reports', compact('roster', 'difficultyAnalysis'));
+        return view('livewire.teacher.reports', [
+            'report' => $reports->build(Auth::user(), $filters),
+            'subjects' => $reports->subjectsFor(Auth::user()),
+            'exportPdfUrl' => route('teacher.reports.export', array_filter([
+                'format' => 'pdf',
+                ...$filters,
+            ], fn ($value) => $value !== '' && $value !== null)),
+            'exportExcelUrl' => route('teacher.reports.export', array_filter([
+                'format' => 'excel',
+                ...$filters,
+            ], fn ($value) => $value !== '' && $value !== null)),
+        ]);
     }
 }

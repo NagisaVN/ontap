@@ -74,7 +74,7 @@ EXPOSE 80
 CMD ["sh", "-c", "\
     php artisan storage:link --force && \
     php artisan migrate --force && \
-    php artisan db:seed --force && \
+    if [ \"${APP_SEED_ON_DEPLOY:-false}\" = \"true\" ]; then php artisan db:seed --force; fi && \
     php artisan config:cache && \
     php artisan view:clear && \
     apache2-foreground"]

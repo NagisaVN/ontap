@@ -74,3 +74,21 @@ php artisan queue:work
 `reviews:send-reminders` runs every day at 08:00 and queues one email per student
 with cards due that day. Configure `MAIL_*` values for the chosen SMTP provider;
 the local default mailer writes messages to the log.
+
+## Deploy on Render
+
+The web service must connect to a managed Render PostgreSQL database; `127.0.0.1`
+is not a database server inside a Render web container. In the Render service's
+**Environment** settings, set these values and choose **Save and deploy**:
+
+| Key | Value |
+| --- | --- |
+| `DB_CONNECTION` | `pgsql` |
+| `DATABASE_URL` | The database's **internal** connection URL from Render's Connect menu |
+| `APP_KEY` | Output of `php artisan key:generate --show` |
+| `APP_ENV` | `production` |
+| `APP_DEBUG` | `false` |
+
+The application accepts both Laravel's `DB_URL` and Render's `DATABASE_URL`.
+The Docker startup command runs migrations, but only seeds when
+`APP_SEED_ON_DEPLOY=true` is explicitly configured.

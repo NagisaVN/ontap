@@ -1,9 +1,9 @@
 <?php
 
-use Illuminate\Support\Facades\Route;
 use App\Livewire\Admin;
 use App\Livewire\Student;
 use App\Livewire\Teacher;
+use Illuminate\Support\Facades\Route;
 
 // ── Root redirect: đã login → dashboard theo role, chưa login → login ──
 Route::get('/', function () {
@@ -62,6 +62,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::get('/tao-cau-hoi',         Teacher\QuestionCreator::class) ->name('teacher.create-question');
             Route::get('/de-thi',       Teacher\ExamBuilder::class)     ->name('teacher.exam-builder');
             Route::get('/bao-cao',      Teacher\Reports::class)          ->name('teacher.reports');
+            Route::get('/bao-cao/xuat/{format}', \App\Http\Controllers\TeacherReportExportController::class)
+                ->whereIn('format', ['pdf', 'excel'])
+                ->name('teacher.reports.export');
 
             // Keep legacy routes pointing to existing classes
             Route::get('/cho-duyet',   Teacher\PendingReview::class)    ->name('teacher.pending');
