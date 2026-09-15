@@ -2,56 +2,102 @@
 
 namespace App\Livewire\Student;
 
+use App\Models\SpacedRepetitionSchedule;
+use App\Models\User;
+use App\Services\ProgressTrackingService;
+use App\Services\SpacedRepetitionService;
+use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Layout;
+use Livewire\Attributes\Title;
 use Livewire\Component;
 
 #[Layout('layouts.app')]
+#[Title('Ôn tập lặp lại')]
 class SpacedRepetition extends Component
 {
-    public int $index = 0;
+    public ?int $currentScheduleId = null;
+
+    public int $sessionCount = 0;
+
+    public int $sessionTotal = 0;
+
     public bool $done = false;
-    public array $history = [];
 
-    /** Placeholder deck — replace with real FlashCard model */
-    protected array $deck = [
-        ['id' => 1, 'subject' => 'Physics', 'front' => 'What is Faraday\'s Law?', 'back' => 'The EMF induced in a loop is proportional to the rate of change of magnetic flux through the loop.'],
-        ['id' => 2, 'subject' => 'Mathematics', 'front' => 'Derivative of sin(x)?', 'back' => 'cos(x)'],
-        ['id' => 3, 'subject' => 'Chemistry', 'front' => 'What is an exothermic reaction?', 'back' => 'A reaction that releases heat energy to the surroundings (ΔH < 0).'],
+    public array $ratingCounts = [
+        'hard' => 0,
+        'medium' => 0,
+        'easy' => 0,
     ];
 
-    public array $ratings = [
-        ['value' => 'easy',   'label' => '😄 Easy',   'color' => 'border-emerald-300 bg-emerald-50 text-emerald-700 hover:bg-emerald-100'],
-        ['value' => 'medium', 'label' => '🤔 Unsure',  'color' => 'border-amber-300 bg-amber-50 text-amber-700 hover:bg-amber-100'],
-        ['value' => 'hard',   'label' => '😓 Hard',    'color' => 'border-rose-300 bg-rose-50 text-rose-700 hover:bg-rose-100'],
-    ];
-
-    public function handleRate(string $rating): void
+    public function mount(ProgressTrackingService $progressTracking): void
     {
-        $this->history[] = ['cardId' => $this->deck[$this->index]['id'], 'rating' => $rating];
-
-        if ($this->index < count($this->deck) - 1) {
-            $this->index++;
-        } else {
-            $this->done = true;
-        }
+        $this->loadDueQueue($progressTracking, true);
     }
 
-    public function startOver(): void
+    public function rateCard(
+        string $rating,
+        SpacedRepetitionService $spacedRepetition,
+        ProgressTrackingService $progressTracking,
+    ): void {
+        if (! in_array($rating, ['hard', 'medium', 'easy'], true) || ! $this->currentScheduleId) {
+            return;
+        }
+
+        $schedule = SpacedRepetitionSchedule::query()
+            ->where('id', $this->currentScheduleId)
+            ->where('nguoi_dung_id', Auth::id())
+            ->firstOrFail();
+
+        $spacedRepetition->review($schedule, $rating);
+        $this->sessionCount++;
+        $this->ratingCounts[$rating]++;
+        $this->loadDueQueue($progressTracking);
+    }
+
+    private function loadDueQueue(ProgressTrackingService $progressTracking, bool $newSession = false): void
     {
-        $this->index   = 0;
-        $this->done    = false;
-        $this->history = [];
+        /** @var User $user */
+        $user = Auth::user();
+        $queue = $progressTracking->layHangDoiOnTap($user);
+
+        if ($newSession) {
+            $this->sessionTotal = $queue->count();
+        }
+
+        $this->currentScheduleId = $queue->first()['schedule']->id ?? null;
+        $this->done = $this->currentScheduleId === null;
     }
 
     public function render()
     {
+        $currentCard = null;
+
+        if ($this->currentScheduleId) {
+            $schedule = SpacedRepetitionSchedule::query()
+                ->where('id', $this->currentScheduleId)
+                ->where('nguoi_dung_id', Auth::id())
+                ->with(['cauHoi.luaChon', 'cauHoi.chuong.monHoc'])
+                ->first();
+
+            if ($schedule?->cauHoi) {
+                $cauHoi = $schedule->cauHoi;
+                $currentCard = (object) [
+                    'id' => $schedule->id,
+                    'subject' => $cauHoi->chuong?->monHoc?->ten ?? 'Môn học',
+                    'question' => $cauHoi->noi_dung,
+                    'answer' => $cauHoi->luaChon
+                        ->where('la_dap_an', true)
+                        ->pluck('noi_dung')
+                        ->implode(' · ') ?: 'Chưa có đáp án được cấu hình.',
+                    'explanation' => $cauHoi->giai_thich,
+                ];
+            }
+        }
+
         return view('livewire.student.spaced-repetition', [
-            'card'       => $this->deck[$this->index] ?? null,
-            'index'      => $this->index,
-            'totalCards' => count($this->deck),
-            'ratings'    => $this->ratings,
-            'done'       => $this->done,
-            'history'    => $this->history,
+            'currentCard' => $currentCard,
+            'currentPosition' => $currentCard ? $this->sessionCount + 1 : $this->sessionCount,
+            'totalCards' => $this->sessionTotal,
         ]);
     }
 }

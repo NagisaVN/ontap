@@ -56,3 +56,21 @@ If you discover a security vulnerability within Laravel, please send an e-mail t
 ## License
 
 The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+
+## Spaced repetition
+
+The review queue stores one SM-2 schedule per student and question in `lich_on_tap`.
+Wrong exam answers are immediately added to the queue; existing wrong-answer data is
+imported when a student first opens `/student/on-tap`.
+
+Run the migration, scheduler, and queue worker in the deployed environment:
+
+```bash
+php artisan migrate --force
+php artisan schedule:work
+php artisan queue:work
+```
+
+`reviews:send-reminders` runs every day at 08:00 and queues one email per student
+with cards due that day. Configure `MAIL_*` values for the chosen SMTP provider;
+the local default mailer writes messages to the log.

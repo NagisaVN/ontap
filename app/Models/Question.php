@@ -2,18 +2,21 @@
 
 namespace App\Models;
 
+use App\Enums\DifficultyLevel;
+use App\Enums\QuestionSource;
+use App\Enums\QuestionStatus;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use Spatie\Activitylog\Traits\LogsActivity;
 use Spatie\Activitylog\LogOptions;
+use Spatie\Activitylog\Traits\LogsActivity;
 
 class Question extends Model
 {
-    use SoftDeletes, LogsActivity;
+    use LogsActivity, SoftDeletes;
 
     /**
      * Spatie Activitylog: auto-log creates, updates, and soft-deletes.
@@ -25,11 +28,11 @@ class Question extends Model
             ->logOnly(['noi_dung', 'do_kho', 'trang_thai', 'nguoi_dung_id', 'chuong_id'])
             ->logOnlyDirty()
             ->dontSubmitEmptyLogs()
-            ->setDescriptionForEvent(fn(string $event) => match ($event) {
+            ->setDescriptionForEvent(fn (string $event) => match ($event) {
                 'created' => 'Question was created',
                 'updated' => 'Question was updated',
                 'deleted' => 'Question was deleted',
-                default   => "Question was {$event}",
+                default => "Question was {$event}",
             });
     }
 
@@ -49,10 +52,10 @@ class Question extends Model
     ];
 
     protected $casts = [
-        'do_ai_tao'   => 'boolean',
-        'do_kho'      => \App\Enums\DifficultyLevel::class,
-        'trang_thai'  => \App\Enums\QuestionStatus::class,
-        'nguon'       => \App\Enums\QuestionSource::class,
+        'do_ai_tao' => 'boolean',
+        'do_kho' => DifficultyLevel::class,
+        'trang_thai' => QuestionStatus::class,
+        'nguon' => QuestionSource::class,
     ];
 
     // ---------------------------------------------------------------
@@ -66,6 +69,7 @@ class Question extends Model
             get: function () {
                 $maMon = $this->chuong?->monHoc?->ma_mon;
                 $prefix = $maMon ? strtoupper($maMon) : 'Q';
+
                 return "{$prefix}-{$this->id}";
             }
         );
@@ -120,10 +124,15 @@ class Question extends Model
         return $this->hasMany(UserQuestionStat::class, 'cau_hoi_id');
     }
 
+    public function lichOnTap(): HasMany
+    {
+        return $this->hasMany(SpacedRepetitionSchedule::class, 'cau_hoi_id');
+    }
+
     public function baiThi(): BelongsToMany
     {
         return $this->belongsToMany(Exam::class, 'bai_thi_cau_hoi', 'cau_hoi_id', 'bai_thi_id')
-                    ->withPivot('thu_tu')
-                    ->withTimestamps();
+            ->withPivot('thu_tu')
+            ->withTimestamps();
     }
 }

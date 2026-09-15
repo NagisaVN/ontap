@@ -2,18 +2,19 @@
 
 namespace App\Models;
 
+use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
-use Spatie\Permission\Traits\HasRoles;
-use Spatie\Activitylog\Traits\LogsActivity;
 use Spatie\Activitylog\LogOptions;
+use Spatie\Activitylog\Traits\LogsActivity;
+use Spatie\Permission\Traits\HasRoles;
 
 class User extends Authenticatable
 {
-    /** @use HasFactory<\Database\Factories\UserFactory> */
-    use HasFactory, Notifiable, HasRoles, LogsActivity;
+    /** @use HasFactory<UserFactory> */
+    use HasFactory, HasRoles, LogsActivity, Notifiable;
 
     /**
      * The attributes that are mass assignable.
@@ -36,11 +37,11 @@ class User extends Authenticatable
             ->logOnly(['name', 'email', 'is_active'])  // Only log these field changes
             ->logOnlyDirty()                            // Skip log if nothing actually changed
             ->dontSubmitEmptyLogs()                     // Never write empty log entries
-            ->setDescriptionForEvent(fn(string $event) => match ($event) {
+            ->setDescriptionForEvent(fn (string $event) => match ($event) {
                 'created' => 'User account was created',
                 'updated' => 'User profile was updated',
                 'deleted' => 'User account was deleted',
-                default   => "User was {$event}",
+                default => "User was {$event}",
             });
     }
 
@@ -85,5 +86,10 @@ class User extends Authenticatable
     public function tienDo(): HasMany
     {
         return $this->hasMany(UserSubSubjectProgress::class, 'nguoi_dung_id');
+    }
+
+    public function lichOnTap(): HasMany
+    {
+        return $this->hasMany(SpacedRepetitionSchedule::class, 'nguoi_dung_id');
     }
 }

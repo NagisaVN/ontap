@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Question;
+use App\Models\SpacedRepetitionSchedule;
 use App\Models\Subject;
 use App\Models\User;
 use App\Models\UserQuestionStat;
@@ -15,6 +16,7 @@ class ProgressTrackingService
 {
     public function __construct(
         private readonly QuestionRepositoryInterface $cauHoiRepo,
+        private readonly SpacedRepetitionService $spacedRepetition,
     ) {}
 
     // ===================================================================
@@ -25,7 +27,7 @@ class ProgressTrackingService
      * Cập nhật thống kê đúng/sai của một câu hỏi cho user.
      * Dùng upsert để tránh race condition.
      *
-     * @return UserQuestionStat  — dùng để kiểm tra so_lan_sai
+     * @return UserQuestionStat — dùng để kiểm tra so_lan_sai
      */
     public function capNhatThongKeCauHoi(int $nguoiDungId, int $cauHoiId, bool $dungSai): UserQuestionStat
     {
@@ -60,8 +62,8 @@ class ProgressTrackingService
             ->first();
 
         $tongDung = $tongHop->tong_dung ?? 0;
-        $tongSai  = $tongHop->tong_sai  ?? 0;
-        $tongLam  = $tongDung + $tongSai;
+        $tongSai = $tongHop->tong_sai ?? 0;
+        $tongLam = $tongDung + $tongSai;
 
         $phanTram = $tongLam > 0
             ? round(($tongDung / $tongLam) * 100, 2)
@@ -70,7 +72,7 @@ class ProgressTrackingService
         return UserSubSubjectProgress::updateOrCreate(
             ['nguoi_dung_id' => $nguoiDungId, 'chuong_id' => $chuongId],
             [
-                'tong_da_lam'          => (int) $tongHop->tong_cau,
+                'tong_da_lam' => (int) $tongHop->tong_cau,
                 'phan_tram_thanh_thao' => $phanTram,
             ]
         );
@@ -94,10 +96,10 @@ class ProgressTrackingService
                 ->first();
 
             return [
-                'chuong_id'  => $chuong->id,
+                'chuong_id' => $chuong->id,
                 'ten_chuong' => $chuong->ten,
-                'phan_tram'  => $tienDo?->phan_tram_thanh_thao ?? 0,
-                'tong_da_lam'=> $tienDo?->tong_da_lam ?? 0,
+                'phan_tram' => $tienDo?->phan_tram_thanh_thao ?? 0,
+                'tong_da_lam' => $tienDo?->tong_da_lam ?? 0,
             ];
         })->toArray();
     }
@@ -113,13 +115,14 @@ class ProgressTrackingService
         return $this->cauHoiRepo->layCauHoiSai($user->id)
             ->map(function ($cauHoi) {
                 $soLanSai = $cauHoi->thongKe->first()?->so_lan_sai ?? 0;
+
                 return [
-                    'cau_hoi_id'  => $cauHoi->id,
-                    'noi_dung'    => mb_substr($cauHoi->noi_dung, 0, 120) . '...',
-                    'chuong'      => $cauHoi->chuong?->ten,
-                    'mon_hoc'     => $cauHoi->chuong?->monHoc?->ten,
-                    'so_lan_sai'  => $soLanSai,
-                    'mau_sac'     => $soLanSai >= 3 ? 'do' : 'cam', // đỏ / cam
+                    'cau_hoi_id' => $cauHoi->id,
+                    'noi_dung' => mb_substr($cauHoi->noi_dung, 0, 120).'...',
+                    'chuong' => $cauHoi->chuong?->ten,
+                    'mon_hoc' => $cauHoi->chuong?->monHoc?->ten,
+                    'so_lan_sai' => $soLanSai,
+                    'mau_sac' => $soLanSai >= 3 ? 'do' : 'cam', // đỏ / cam
                 ];
             });
     }
@@ -130,15 +133,47 @@ class ProgressTrackingService
      */
     public function layHangDoiOnTap(User $user, ?int $monHocId = null): Collection
     {
-        return $this->cauHoiRepo->layChoONTap($user->id, $monHocId)
-            ->map(function ($cauHoi) {
-                $thongKe = $cauHoi->thongKe->first();
+        // Import legacy weak-question data the first time a student opens
+        // review. From then on, schedules are created as part of grading.
+        $cauHoiYeu = $this->cauHoiRepo->layChoONTap($user->id, $monHocId);
+        $this->spacedRepetition->synchronizeWrongAnswerSchedules(
+            $user,
+            $cauHoiYeu,
+        );
+
+        $schedules = SpacedRepetitionSchedule::query()
+            ->where('nguoi_dung_id', $user->id)
+            ->due()
+            ->when(
+                $monHocId,
+                fn ($query) => $query->whereHas(
+                    'cauHoi.chuong',
+                    fn ($chuong) => $chuong->where('mon_hoc_id', $monHocId),
+                ),
+            )
+            ->with(['cauHoi.luaChon', 'cauHoi.chuong.monHoc'])
+            ->orderBy('next_review_at')
+            ->get();
+
+        $thongKeTheoCauHoi = UserQuestionStat::query()
+            ->where('nguoi_dung_id', $user->id)
+            ->whereIn('cau_hoi_id', $schedules->pluck('cau_hoi_id'))
+            ->get()
+            ->keyBy('cau_hoi_id');
+
+        return $schedules
+            ->sortByDesc(fn (SpacedRepetitionSchedule $schedule) => $thongKeTheoCauHoi->get($schedule->cau_hoi_id)?->so_lan_sai ?? 0,
+            )
+            ->map(function (SpacedRepetitionSchedule $schedule) use ($thongKeTheoCauHoi) {
+                $thongKe = $thongKeTheoCauHoi->get($schedule->cau_hoi_id);
+
                 return [
-                    'cau_hoi'      => $cauHoi,
-                    'so_lan_sai'   => $thongKe?->so_lan_sai ?? 0,
-                    'so_lan_dung'  => $thongKe?->so_lan_dung ?? 0,
+                    'schedule' => $schedule,
+                    'cau_hoi' => $schedule->cauHoi,
+                    'so_lan_sai' => $thongKe?->so_lan_sai ?? 0,
+                    'so_lan_dung' => $thongKe?->so_lan_dung ?? 0,
                     'lan_cuoi_lam' => $thongKe?->lan_cuoi_lam,
-                    'la_diem_yeu'  => ($thongKe?->so_lan_sai ?? 0) >= 3,
+                    'la_diem_yeu' => ($thongKe?->so_lan_sai ?? 0) >= 3,
                 ];
             });
     }
@@ -148,7 +183,7 @@ class ProgressTrackingService
      */
     public function layTongQuanUser(User $user): array
     {
-        $tongLuotThi   = $user->luotThi()->count();
+        $tongLuotThi = $user->luotThi()->count();
         $diemTrungBinh = $user->luotThi()
             ->where('trang_thai', 'hoan_thanh')
             ->avg('diem_so');
@@ -163,9 +198,9 @@ class ProgressTrackingService
             ->count();
 
         return [
-            'tong_luot_thi'   => $tongLuotThi,
+            'tong_luot_thi' => $tongLuotThi,
             'diem_trung_binh' => round($diemTrungBinh ?? 0, 2),
-            'so_chuong_da_hoc'=> $soMonDaHoc,
+            'so_chuong_da_hoc' => $soMonDaHoc,
             'so_cau_diem_yeu' => $cauHoiDiemYeu,
         ];
     }
