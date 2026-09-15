@@ -30,8 +30,7 @@
                     <div class="flex items-center gap-2">
                         <span class="text-sm text-slate-500 font-medium" x-text="count.length + ' đã chọn'"></span>
                         @role('super_admin')
-                        <button wire:click="bulkBan"
-                            @click="$dispatch('open-modal', 'confirm-bulk-ban')"
+                        <button @click="$dispatch('open-modal', 'confirm-bulk-ban')"
                             class="h-8 px-3 rounded-lg bg-amber-100 text-amber-700 text-xs font-semibold hover:bg-amber-200 transition-colors">
                             Khóa tất cả
                         </button>
@@ -92,7 +91,7 @@
                 <tbody class="divide-y divide-slate-100">
                     @forelse ($this->users as $user)
                     <tr wire:key="{{ $user->id }}"
-                        class="hover:bg-slate-50/60 transition-colors group {{ !$user->is_active ? 'opacity-60' : '' }}">
+                        class="hover:bg-slate-50/60 transition-colors group {{ !$user->isActive() ? 'opacity-60' : '' }}">
 
                         {{-- Checkbox --}}
                         <td class="px-4 py-4">
@@ -138,7 +137,7 @@
 
                         {{-- Status badge --}}
                         <td class="px-5 py-4">
-                            @if ($user->is_active)
+                            @if ($user->isActive())
                                 <x-badge variant="success">Hoạt động</x-badge>
                             @else
                                 <x-badge variant="error">Đã khóa</x-badge>
@@ -179,9 +178,9 @@
                                 @role('super_admin')
                                 <button wire:click="toggleBan({{ $user->id }})"
                                     @disabled($user->id === auth()->id())
-                                    class="w-7 h-7 flex items-center justify-center rounded-lg transition-colors {{ $user->is_active ? 'text-slate-400 hover:bg-amber-50 hover:text-amber-600' : 'text-emerald-500 hover:bg-emerald-50' }}"
-                                    title="{{ $user->is_active ? 'Khóa tài khoản' : 'Mở khóa tài khoản' }}">
-                                    @if ($user->is_active)
+                                    class="w-7 h-7 flex items-center justify-center rounded-lg transition-colors {{ $user->isActive() ? 'text-slate-400 hover:bg-amber-50 hover:text-amber-600' : 'text-emerald-500 hover:bg-emerald-50' }}"
+                                    title="{{ $user->isActive() ? 'Khóa tài khoản' : 'Mở khóa tài khoản' }}">
+                                    @if ($user->isActive())
                                     <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>
                                     @else
                                     <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="20 6 9 16 4 11"/></svg>

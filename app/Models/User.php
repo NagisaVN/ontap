@@ -65,7 +65,17 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'is_active' => 'boolean',
         ];
+    }
+
+    /**
+     * Accounts created before the activity flag was introduced remain usable
+     * unless an administrator explicitly disabled them.
+     */
+    public function isActive(): bool
+    {
+        return $this->is_active !== false;
     }
 
     public function baiThi(): HasMany

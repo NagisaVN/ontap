@@ -170,7 +170,7 @@ class UserManagement extends Component
             session()->flash('error', 'Không thể tự khóa chính mình.');
             return;
         }
-        $user->is_active = !$user->is_active;
+        $user->is_active = ! $user->isActive();
         $user->save();
         session()->flash('success', ($user->is_active ? 'Mở khóa' : 'Khóa') . " tài khoản {$user->name}.");
     }

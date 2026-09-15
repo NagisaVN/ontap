@@ -24,18 +24,23 @@ class Login extends Component
         $this->validate();
 
         if (! Auth::attempt(['email' => $this->email, 'password' => $this->password], $this->remember)) {
-            $this->addError('email', 'These credentials do not match our records.');
+            $this->addError('email', 'Email hoặc mật khẩu không đúng.');
+            return;
+        }
+
+        $user = Auth::user();
+        if (! $user->isActive()) {
+            Auth::logout();
+            $this->addError('email', 'Tài khoản này đã bị khóa.');
             return;
         }
 
         session()->regenerate();
 
-        $user = Auth::user();
-
-        match ($user->role) {
-            'admin'   => $this->redirect(route('admin.dashboard'),   navigate: true),
-            'teacher' => $this->redirect(route('teacher.dashboard'), navigate: true),
-            default   => $this->redirect(route('student.dashboard'), navigate: true),
+        match (true) {
+            $user->hasRole('super_admin') => $this->redirect(route('admin.dashboard'), navigate: true),
+            $user->hasRole('teacher') => $this->redirect(route('teacher.dashboard'), navigate: true),
+            default => $this->redirect(route('student.dashboard'), navigate: true),
         };
     }
 
