@@ -38,11 +38,9 @@ COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
 COPY . .
 
-RUN composer install --no-dev --optimize-autoloader
-
-RUN npm install && npm run build
-
-# ── Tạo các thư mục storage cần thiết ───────────────────────────────────────
+# Laravel runs `artisan package:discover` during Composer installation. These
+# cache directories must already exist, especially when .dockerignore omits
+# local runtime files from the build context.
 RUN mkdir -p \
     storage/app/public \
     storage/app/livewire-tmp \
@@ -52,6 +50,11 @@ RUN mkdir -p \
     storage/logs \
     bootstrap/cache
 
+RUN composer install --no-dev --optimize-autoloader
+
+RUN npm install && npm run build
+
+# ── Tạo các thư mục storage cần thiết ───────────────────────────────────────
 RUN chown -R www-data:www-data \
     /var/www/html/storage \
     /var/www/html/bootstrap/cache \
