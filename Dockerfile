@@ -22,6 +22,8 @@ RUN apt-get update && apt-get install -y \
     zip \
     && a2enmod rewrite
 
+RUN echo 'ServerName localhost' >> /etc/apache2/apache2.conf
+
 # ── PHP upload & memory limits ──────────────────────────────────────────────
 RUN { \
     echo 'upload_max_filesize = 20M'; \
@@ -74,10 +76,6 @@ RUN sed -i 's|<Directory /var/www/>|<Directory /var/www/html/public>|' \
 
 EXPOSE 80
 
-CMD ["sh", "-c", "\
-    php artisan storage:link --force && \
-    php artisan migrate --force && \
-    if [ \"${APP_SEED_ON_DEPLOY:-false}\" = \"true\" ]; then php artisan db:seed --force; fi && \
-    php artisan config:cache && \
-    php artisan view:clear && \
-    apache2-foreground"]
+RUN chmod +x docker/start.sh
+
+CMD ["docker/start.sh"]
