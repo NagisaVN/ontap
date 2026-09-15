@@ -88,6 +88,7 @@ is not a database server inside a Render web container. In the Render service's
 | `APP_KEY` | Output of `php artisan key:generate --show` |
 | `APP_ENV` | `production` |
 | `APP_DEBUG` | `false` |
+| `LOG_CHANNEL` | `stderr` |
 
 The application accepts both Laravel's `DB_URL` and Render's `DATABASE_URL`.
 The Docker startup command runs migrations, but only seeds when

@@ -70,7 +70,7 @@
                 </button>
                 <button
                     type="button"
-                    x-on:click="$dispatch('confirm'); show = false;"
+                    x-on:click="$dispatch('confirm-{{ $name }}'); show = false;"
                     class="flex-1 h-9 rounded-lg text-sm font-semibold text-white transition-colors {{ $danger ? 'bg-rose-600 hover:bg-rose-700' : 'bg-indigo-600 hover:bg-indigo-700' }}"
                 >
                     {{ $confirmLabel }}

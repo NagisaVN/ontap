@@ -2,6 +2,11 @@ FROM php:8.3-apache
 
 WORKDIR /var/www/html
 
+# Render collects the container's standard error stream. Laravel otherwise
+# writes exceptions only to storage/logs, which is not visible in Render Logs.
+ENV LOG_CHANNEL=stderr \
+    LOG_LEVEL=error
+
 RUN apt-get update && apt-get install -y \
     git \
     unzip \

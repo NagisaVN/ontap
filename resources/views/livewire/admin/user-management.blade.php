@@ -209,7 +209,7 @@
                         message="Hành động này không thể hoàn tác."
                         confirm-label="Xóa"
                         :danger="true"
-                        x-on:confirm.window="$wire.deleteUser({{ $user->id }})"/>
+                        x-on:confirm-confirm-delete-{{ $user->id }}.window="$wire.deleteUser({{ $user->id }})"/>
                     @endcan
 
                     @empty
@@ -344,7 +344,7 @@
         message="Tất cả người dùng được chọn sẽ bị mất quyền truy cập ngay lập tức."
         confirm-label="Khóa tất cả"
         :danger="false"
-        x-on:confirm.window="$wire.bulkBan()"/>
+        x-on:confirm-confirm-bulk-ban.window="$wire.bulkBan()"/>
 
     <x-confirm-modal
         name="confirm-bulk-delete"
@@ -352,6 +352,6 @@
         message="Hành động này không thể hoàn tác. Tất cả dữ liệu của những người dùng này sẽ bị xóa."
         confirm-label="Xóa tất cả"
         :danger="true"
-        x-on:confirm.window="$wire.bulkDelete()"/>
+        x-on:confirm-confirm-bulk-delete.window="$wire.bulkDelete()"/>
 
 </div>

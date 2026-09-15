@@ -8,6 +8,7 @@ use Illuminate\Validation\Rules;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Validate;
 use Livewire\Component;
+use Spatie\Permission\Models\Role;
 
 #[Layout('layouts.guest')]
 class Register extends Component
@@ -37,7 +38,10 @@ class Register extends Component
             'is_active'         => true,
             'email_verified_at' => now(),
         ]);
-        $user->assignRole($this->role);
+        // A fresh production database may have completed migrations before
+        // its optional demo seeder runs. Ensure the two public roles exist so
+        // registration never fails with Spatie's RoleDoesNotExist exception.
+        $user->assignRole(Role::findOrCreate($this->role));
 
         auth()->login($user);
 
