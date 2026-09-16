@@ -144,7 +144,7 @@ class TeacherReportService
                 'chuong.ten as topic',
                 'mon_hoc.ten as subject',
                 DB::raw('COUNT(ket_qua.id) as response_count'),
-                DB::raw('SUM(CASE WHEN ket_qua.dung_sai = 0 THEN 1 ELSE 0 END) as wrong_count'),
+                DB::raw('SUM(CASE WHEN ket_qua.dung_sai IS FALSE THEN 1 ELSE 0 END) as wrong_count'),
             ])
             ->groupBy('ket_qua.cau_hoi_id', 'cau_hoi.noi_dung', 'cau_hoi.do_kho', 'chuong.ten', 'mon_hoc.ten')
             ->get();
