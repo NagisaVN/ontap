@@ -3,6 +3,7 @@
     'value',
     'delta' => null,
     'deltaPositive' => true,
+    'deltaNeutral' => false,
     'color' => 'indigo',
     'icon' => null,
 ])
@@ -27,8 +28,8 @@
         <p class="text-sm text-slate-500 font-medium truncate">{{ $label }}</p>
         <p class="text-2xl font-bold text-slate-900 mt-0.5 leading-none">{{ $value }}</p>
         @if($delta)
-            <p class="text-xs font-medium mt-1.5 {{ $deltaPositive ? 'text-emerald-600' : 'text-rose-600' }}">
-                {{ $deltaPositive ? '↑' : '↓' }} {{ $delta }}
+            <p class="text-xs font-medium mt-1.5 {{ $deltaNeutral ? 'text-slate-500' : ($deltaPositive ? 'text-emerald-600' : 'text-rose-600') }}">
+                @unless($deltaNeutral){{ $deltaPositive ? '↑' : '↓' }} @endunless{{ $delta }}
             </p>
         @endif
     </div>

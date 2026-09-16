@@ -58,7 +58,7 @@
     {{-- LEFT: Question Panel --}}
     <div class="space-y-4">
 
-        <div wire:loading wire:target="cauTruoc, cauTiep, denCau, nopBai" class="sp-card p-8 text-center w-full">
+        <div wire:loading wire:target="cauTruoc,cauTiep,denCau,nopBai" class="sp-card p-8 text-center w-full" style="display: none">
             <div class="sp-skeleton h-6 w-3/4 mx-auto mb-3" style="height:24px;border-radius:4px"></div>
             <div class="sp-skeleton h-4 w-1/2 mx-auto" style="height:16px;border-radius:4px"></div>
         </div>
@@ -66,7 +66,7 @@
         @if(!empty($cauHoiList))
         @php $cq = $cauHoiList[$cauHienTai]; $keys = ['A','B','C','D','E']; @endphp
 
-        <div wire:loading.remove wire:target="cauTruoc, cauTiep, denCau, nopBai" class="w-full">
+        <div wire:loading.remove wire:target="cauTruoc,cauTiep,denCau,nopBai" class="w-full">
             <div class="sp-card p-5 animate-fade-in" wire:key="cau-{{ $cauHienTai }}">
             <div class="flex items-center justify-between mb-3">
                 <span class="text-xs font-semibold" style="color:var(--sp-text-muted)">

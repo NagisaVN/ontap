@@ -20,7 +20,7 @@ $intensityClass = function($v) {
       <p class="text-indigo-100 text-sm mt-1">Hôm nay bạn có kế hoạch ôn tập chưa? Hãy duy trì chuỗi ngày học!</p>
     </div>
     <a
-      href="/student/exam/setup" wire:navigate
+      href="{{ route('student.thi') }}" wire:navigate
       class="hidden sm:flex items-center gap-2 bg-white/20 hover:bg-white/30 transition-colors rounded-xl px-4 h-10 text-sm font-semibold text-white shrink-0"
     >
       Bắt đầu thi 
@@ -31,19 +31,37 @@ $intensityClass = function($v) {
 
   <!-- KPI cards -->
   <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-    <x-kpi-card label="Tổng bài đã thi" value="47" delta="5 bài tuần này" :deltaPositive="true" color="indigo">
+    <x-kpi-card
+      label="Tổng bài đã thi"
+      :value="$stats['completedCount']"
+      :delta="$stats['thisWeekCount'] > 0 ? 'Đã thi '.$stats['thisWeekCount'].' bài tuần này' : null"
+      :deltaNeutral="true"
+      color="indigo"
+    >
         <x-slot:icon>
             <!-- Icon: BookOpen -->
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
         </x-slot:icon>
     </x-kpi-card>
-    <x-kpi-card label="Điểm trung bình" value="78.4%" delta="+2.3% so tuần trước" :deltaPositive="true" color="blue">
+    <x-kpi-card
+      label="Điểm trung bình"
+      :value="$stats['averageScore'] === null ? '—' : $stats['averageScore'].'%'"
+      :delta="$stats['scoreDelta'] ? (($stats['scoreDelta']['value'] > 0 ? '+' : '').$stats['scoreDelta']['value'].'% so tuần trước') : null"
+      :deltaPositive="$stats['scoreDelta']['positive'] ?? true"
+      color="blue"
+    >
         <x-slot:icon>
             <!-- Icon: Target -->
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
         </x-slot:icon>
     </x-kpi-card>
-    <x-kpi-card label="Tỷ lệ chính xác" value="81%" delta="+1.2% so tuần trước" :deltaPositive="true" color="emerald">
+    <x-kpi-card
+      label="Tỷ lệ chính xác"
+      :value="$stats['accuracy'] === null ? '—' : $stats['accuracy'].'%'"
+      :delta="$stats['accuracyDelta'] ? (($stats['accuracyDelta']['value'] > 0 ? '+' : '').$stats['accuracyDelta']['value'].'% so tuần trước') : null"
+      :deltaPositive="$stats['accuracyDelta']['positive'] ?? true"
+      color="emerald"
+    >
         <x-slot:icon>
             <!-- Icon: Zap -->
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
@@ -108,7 +126,7 @@ $intensityClass = function($v) {
     <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-5">
       <div class="flex items-center justify-between mb-4">
         <h2 class="font-semibold text-slate-900">Chuỗi ngày học</h2>
-        <span class="text-xs font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-full">🔥 14 ngày</span>
+        <span class="text-xs font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-full">🔥 {{ $streakDays }} ngày</span>
       </div>
 
       <!-- Day labels -->
@@ -125,7 +143,7 @@ $intensityClass = function($v) {
             <div class="grid grid-cols-7 gap-1">
               @foreach($week as $di => $val)
                 <div
-                  title="W{{ $wi + 1 }} Day {{ $di + 1 }}: {{ $val * 10 }} mins"
+                  title="{{ $val === 0 ? 'Chưa có hoạt động' : 'Đã học trong ngày' }}"
                   class="h-6 rounded-sm {{ $intensityClass($val) }} transition-colors"
                 ></div>
               @endforeach
