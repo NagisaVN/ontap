@@ -47,7 +47,7 @@ class Register extends Component
 
         $this->redirect(
             $this->role === 'teacher' ? route('teacher.dashboard') : route('student.dashboard'),
-            navigate: true,
+            navigate: false,
         );
     }
 

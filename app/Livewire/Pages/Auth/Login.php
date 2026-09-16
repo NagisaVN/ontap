@@ -38,9 +38,9 @@ class Login extends Component
         session()->regenerate();
 
         match (true) {
-            $user->hasRole('super_admin') => $this->redirect(route('admin.dashboard'), navigate: true),
-            $user->hasRole('teacher') => $this->redirect(route('teacher.dashboard'), navigate: true),
-            default => $this->redirect(route('student.dashboard'), navigate: true),
+            $user->hasRole('super_admin') => $this->redirect(route('admin.dashboard'), navigate: false),
+            $user->hasRole('teacher') => $this->redirect(route('teacher.dashboard'), navigate: false),
+            default => $this->redirect(route('student.dashboard'), navigate: false),
         };
     }
 
